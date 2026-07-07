@@ -98,7 +98,7 @@ main{max-width:1420px; margin:0 auto; padding:20px 22px 60px;}
 .q-left{flex:1; font-size:13px; padding-top:6px;}
 .q-left p{margin-bottom:7px;}
 .q-left .to{font-size:16px; font-weight:700; border-bottom:1px solid #111; display:inline-block; padding:0 6px 2px 2px;}
-.sup{width:408px; border:1.2px solid #111; font-size:11px; position:relative;}
+.sup{width:408px; border:2px solid #111; font-size:11px; position:relative;}
 .sup table{width:100%; border-collapse:collapse;}
 .sup td{border:.6px solid #444; padding:4px 6px; white-space:nowrap;}
 .sup td.k{background:#f0f2f5; width:72px; text-align:center; font-weight:700; white-space:nowrap;}
@@ -106,7 +106,7 @@ main{max-width:1420px; margin:0 auto; padding:20px 22px 60px;}
 .stamp-spot img{width:100%; height:100%; object-fit:contain; mix-blend-mode:multiply;}
 .q-intro{font-size:13px; margin:10px 0 6px;}
 .q-total-line{border:1.4px solid #111; padding:8px 12px; font-size:14px; font-weight:700; display:flex; justify-content:space-between; margin-bottom:12px; background:#fafafa;}
-table.q-items{width:100%; border-collapse:collapse; font-size:12px;}
+table.q-items{width:100%; border-collapse:collapse; font-size:12px; border:2px solid #111;}
 table.q-items th{border:.8px solid #111; background:#eef1f4; padding:6px 4px; font-weight:700;}
 table.q-items td{border:.8px solid #111; padding:5px 6px; vertical-align:middle;}
 table.q-items td.num{text-align:right; font-variant-numeric:tabular-nums;}
@@ -577,7 +577,7 @@ function supplierBox(){
   const s=S.supplier;
   return `<div class="sup">${stampHtml()}<table>
     <tr><td class="k">사업자번호</td><td colspan="3">${esc(s.bizNo)||'—'}</td></tr>
-    <tr><td class="k">상호</td><td>${esc(s.name)||'—'}</td><td class="k">대표</td><td style="padding-right:46px">${esc(s.ceo)||'—'} (인)</td></tr>
+    <tr><td class="k">상호</td><td>${esc(s.name)||'—'}</td><td class="k">대표</td><td style="min-width:120px">${esc(s.ceo)||'—'}<span style="float:right; padding-right:10px; color:#555">(인)</span></td></tr>
     <tr><td class="k">소재지</td><td colspan="3">${esc(s.addr)||'—'}</td></tr>
     <tr><td class="k">업태/종목</td><td colspan="3">${esc(s.bizType)||'—'} / ${esc(s.bizItem)||'—'}</td></tr>
     <tr><td class="k">연락처</td><td>${esc(s.phone)||'—'}</td><td class="k">담당</td><td>${esc(s.manager)||'—'}</td></tr>
@@ -670,6 +670,17 @@ function exportPdf(){
 
 /* ── 엑셀(.xlsx) — 주력 출력 ── */
 const B_THIN={style:'thin'}, B_MED={style:'medium'};
+function outline(ws, r1, c1, r2, c2){
+  for(let R=r1; R<=r2; R++) for(let C=c1; C<=c2; C++){
+    const cel=ws.getCell(R,C);
+    const b=Object.assign({}, cel.border||{});
+    b.top    = R===r1 ? B_MED : (b.top    || B_THIN);
+    b.bottom = R===r2 ? B_MED : (b.bottom || B_THIN);
+    b.left   = C===c1 ? B_MED : (b.left   || B_THIN);
+    b.right  = C===c2 ? B_MED : (b.right  || B_THIN);
+    cel.border=b;
+  }
+}
 const bAll={top:B_THIN,left:B_THIN,bottom:B_THIN,right:B_THIN};
 const bBox={top:B_MED,left:B_MED,bottom:B_MED,right:B_MED};
 function cell(ws,addr,val,opt={}){
@@ -718,13 +729,21 @@ async function exportExcel(){
 }
 function supplierRowsExcel(ws, startRow, colK, colV, colEnd){
   const s=S.supplier;
-  const rows=[['사업자번호',s.bizNo],['상호/대표',`${s.name}   대표 : ${s.ceo} (인)`],['소재지',s.addr],['업태/종목',`${s.bizType} / ${s.bizItem}`],['연락처/담당',`${s.phone}   ${s.manager}`]];
+  const rows=[['사업자번호',s.bizNo],['상호/대표',`${s.name}   대표 : ${s.ceo}`],['소재지',s.addr],['업태/종목',`${s.bizType} / ${s.bizItem}`],['연락처/담당',`${s.phone}   ${s.manager}`]];
   rows.forEach((r,i)=>{
     const rr=startRow+i;
     ws.getRow(rr).height=20;
     cell(ws,colK+rr,r[0],{font:{bold:true,size:9},align:{horizontal:'center',wrapText:false,shrinkToFit:true},border:bAll,fill:'FFF0F2F5'});
-    ws.mergeCells(`${colV}${rr}:${colEnd}${rr}`);
-    cell(ws,colV+rr,r[1]||'',{font:{size:9},align:{wrapText:false,shrinkToFit:true},border:bAll});
+    if(i===1){
+      // 상호/대표 행: (인)을 마지막 칸에 분리 → 직인이 이름을 가리지 않음
+      const endPrev=String.fromCharCode(colEnd.charCodeAt(0)-1);
+      if(colV!==endPrev) ws.mergeCells(`${colV}${rr}:${endPrev}${rr}`);
+      cell(ws,colV+rr,r[1]||'',{font:{size:9},align:{wrapText:false,shrinkToFit:true},border:bAll});
+      cell(ws,colEnd+rr,'(인)',{font:{size:9,color:{argb:'FF555555'}},align:{horizontal:'center'},border:bAll});
+    }else{
+      ws.mergeCells(`${colV}${rr}:${colEnd}${rr}`);
+      cell(ws,colV+rr,r[1]||'',{font:{size:9},align:{wrapText:false,shrinkToFit:true},border:bAll});
+    }
   });
   return startRow+rows.length;
 }
@@ -740,11 +759,13 @@ function buildEnkSheet(wb){
   cell(ws,'A7', Q.eduDate?`교 육 일 : ${fmtDate(Q.eduDate)}`:'',{font:{size:10}}); ws.mergeCells('A7:D7');
   cell(ws,'A8','아래와 같이 견적합니다.',{font:{size:10}}); ws.mergeCells('A8:D8');
   supplierRowsExcel(ws,4,'E','F','H');
-  addStamp(wb, ws, {col:7.35, row:4.08}, 34);
+  outline(ws,4,5,8,8);   // 공급자 박스 (E4:H8)
+  addStamp(wb, ws, {col:7.25, row:4.05}, 34);   // H열 (인) 칸 위
   ws.mergeCells('A10:H10');
   cell(ws,'A10',`합계금액 : 일금 ${numToHangul(c.total)}整   (₩ ${fmt(c.total)}) ${c.vatLabel}`,{font:{size:12,bold:true},align:{horizontal:'center',wrapText:false,shrinkToFit:true},border:bBox,fill:'FFFAFAFA'});
   ws.getRow(10).height=26;
   let r=12;
+  const tTop=r;
   const th=['품 명','','규 격','수량','수량','단 가','공급가액','비고'];
   th.forEach((t,i)=>cell(ws,String.fromCharCode(65+i)+r,t,{font:{bold:true,size:10},align:{horizontal:'center'},border:bAll,fill:'FFEEF1F4'}));
   ws.mergeCells(`A${r}:B${r}`); r++;
@@ -777,7 +798,9 @@ function buildEnkSheet(wb){
   ws.mergeCells(`A${r}:B${r}`); cell(ws,'A'+r,'총 계',{font:{bold:true},align:{horizontal:'center'},border:bAll,fill:'FFEEF1F4'});
   ws.mergeCells(`C${r}:F${r}`); cell(ws,'C'+r, c.vat?`부가세 ${fmt(c.vat)}원 별도 가산`:'',{font:{size:8.5},align:{horizontal:'center'},border:bAll});
   cell(ws,'G'+r,c.total,{font:{bold:true},align:{horizontal:'right'},border:bAll,fill:'FFEEF1F4',numFmt:'#,##0'});
-  cell(ws,'H'+r,c.vatLabel.replace(/[()]/g,''),{font:{size:7.5},align:{horizontal:'center'},border:bAll}); r+=2;
+  cell(ws,'H'+r,c.vatLabel.replace(/[()]/g,''),{font:{size:7.5},align:{horizontal:'center'},border:bAll});
+  outline(ws,tTop,1,r,8);   // 품목표 전체 (A~H)
+  r+=2;
   ws.mergeCells(`A${r}:H${r}`); cell(ws,'A'+r,'※ 특이사항',{font:{bold:true,size:9.5}}); r++;
   termsList().forEach(t=>{ ws.mergeCells(`A${r}:H${r}`); cell(ws,'A'+r,' · '+t,{font:{size:9},align:{wrapText:false,shrinkToFit:true}}); r++; });
   if(S.supplier.account){ ws.mergeCells(`A${r}:H${r}`); cell(ws,'A'+r,' · 입금계좌 : '+S.supplier.account,{font:{size:9},align:{wrapText:false,shrinkToFit:true}}); r++; }
@@ -797,8 +820,10 @@ function buildGianSheet(wb){
   cell(ws,'A'+r,`제    목 : ${Q.title}`,{font:{size:10}}); ws.mergeCells(`A${r}:C${r}`); r++;
   cell(ws,'A'+r,'아래와 같이 견적합니다.',{font:{size:10}}); ws.mergeCells(`A${r}:C${r}`);
   const supEnd=supplierRowsExcel(ws,4,'D','E','F');
-  addStamp(wb, ws, {col:5.5, row:4.08}, 34);
+  outline(ws,4,4,8,6);   // 공급자 박스 (D4:F8)
+  addStamp(wb, ws, {col:5.25, row:4.05}, 34);   // F열 (인) 칸 위
   r=Math.max(r+2, supEnd+1);
+  const tTop=r;
   ['순번','품 명','수 량','단 가','금 액','비 고'].forEach((t,i)=>cell(ws,String.fromCharCode(65+i)+r,t,{font:{bold:true,size:10},align:{horizontal:'center'},border:bAll,fill:'FFEEF1F4'})); r++;
   Q.items.forEach((it,i)=>{
     cell(ws,'A'+r,i+1,{align:{horizontal:'center'},border:bAll});
@@ -824,7 +849,9 @@ function buildGianSheet(wb){
   cell(ws,'F'+r,c.cutLabel,{font:{size:7.5},align:{horizontal:'center'},border:bAll}); r++;
   ws.mergeCells(`A${r}:D${r}`); cell(ws,'A'+r,'합 계',{font:{bold:true},align:{horizontal:'center'},border:bAll,fill:'FFEEF1F4'});
   cell(ws,'E'+r,c.total,{font:{bold:true},align:{horizontal:'right'},border:bAll,fill:'FFEEF1F4',numFmt:'#,##0'});
-  cell(ws,'F'+r,c.vatLabel.replace(/[()]/g,''),{font:{size:7.5},align:{horizontal:'center'},border:bAll}); r+=2;
+  cell(ws,'F'+r,c.vatLabel.replace(/[()]/g,''),{font:{size:7.5},align:{horizontal:'center'},border:bAll});
+  outline(ws,tTop,1,r,6);   // 품목표 전체 (A~F)
+  r+=2;
   ws.mergeCells(`A${r}:F${r}`);
   cell(ws,'A'+r,`일금 : ${numToHangul(c.total)}整  (₩ ${fmt(c.total)}) ${c.vatLabel}`,{font:{size:12,bold:true},align:{horizontal:'center',wrapText:false,shrinkToFit:true},border:bBox}); ws.getRow(r).height=24; r+=2;
   ws.mergeCells(`A${r}:F${r}`); cell(ws,'A'+r,'※ 특이사항',{font:{bold:true,size:9.5}}); r++;
