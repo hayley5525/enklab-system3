@@ -102,7 +102,7 @@ main{max-width:1420px; margin:0 auto; padding:20px 22px 60px;}
 .sup table{width:100%; border-collapse:collapse;}
 .sup td{border:.6px solid #444; padding:4px 6px;}
 .sup td.k{background:#f0f2f5; width:72px; text-align:center; font-weight:700; white-space:nowrap;}
-.stamp-spot{position:absolute; right:10px; top:26px; width:64px; height:64px;}
+.stamp-spot{position:absolute; right:4px; top:20px; width:42px; height:42px;}
 .stamp-spot img{width:100%; height:100%; object-fit:contain; mix-blend-mode:multiply;}
 .q-intro{font-size:13px; margin:10px 0 6px;}
 .q-total-line{border:1.4px solid #111; padding:8px 12px; font-size:14px; font-weight:700; display:flex; justify-content:space-between; margin-bottom:12px; background:#fafafa;}
@@ -577,7 +577,7 @@ function supplierBox(){
   const s=S.supplier;
   return `<div class="sup">${stampHtml()}<table>
     <tr><td class="k">사업자번호</td><td colspan="3">${esc(s.bizNo)||'—'}</td></tr>
-    <tr><td class="k">상호</td><td>${esc(s.name)||'—'}</td><td class="k">대표</td><td style="padding-right:56px">${esc(s.ceo)||'—'}</td></tr>
+    <tr><td class="k">상호</td><td>${esc(s.name)||'—'}</td><td class="k">대표</td><td style="padding-right:46px">${esc(s.ceo)||'—'} (인)</td></tr>
     <tr><td class="k">소재지</td><td colspan="3">${esc(s.addr)||'—'}</td></tr>
     <tr><td class="k">업태/종목</td><td colspan="3">${esc(s.bizType)||'—'} / ${esc(s.bizItem)||'—'}</td></tr>
     <tr><td class="k">연락처</td><td>${esc(s.phone)||'—'}</td><td class="k">담당</td><td>${esc(s.manager)||'—'}</td></tr>
@@ -694,10 +694,11 @@ function addAttachSheet(wb, title, img){
     cell(ws,'A3','이미지가 등록되지 않았습니다. 설정에서 업로드 후 다시 출력하세요.',{font:{color:{argb:'FF9A6A00'}}});
   }
 }
-function addStamp(wb, ws, colRow){
+function addStamp(wb, ws, colRow, size){
   if(!S.images.stamp) return;
   const id=wb.addImage(dataUrlParts(S.images.stamp));
-  ws.addImage(id,{tl:colRow, ext:{width:52,height:52}});
+  const s=size||34;
+  ws.addImage(id,{tl:colRow, ext:{width:s,height:s}});
 }
 async function exportExcel(){
   readForm();
@@ -717,7 +718,7 @@ async function exportExcel(){
 }
 function supplierRowsExcel(ws, startRow, colK, colV, colEnd){
   const s=S.supplier;
-  const rows=[['사업자번호',s.bizNo],['상호/대표',`${s.name}   대표 : ${s.ceo}`],['소재지',s.addr],['업태/종목',`${s.bizType} / ${s.bizItem}`],['연락처/담당',`${s.phone}   ${s.manager}`]];
+  const rows=[['사업자번호',s.bizNo],['상호/대표',`${s.name}   대표 : ${s.ceo} (인)`],['소재지',s.addr],['업태/종목',`${s.bizType} / ${s.bizItem}`],['연락처/담당',`${s.phone}   ${s.manager}`]];
   rows.forEach((r,i)=>{
     const rr=startRow+i;
     ws.getRow(rr).height=20;
@@ -739,9 +740,9 @@ function buildEnkSheet(wb){
   cell(ws,'A7', Q.eduDate?`교 육 일 : ${fmtDate(Q.eduDate)}`:'',{font:{size:10}}); ws.mergeCells('A7:D7');
   cell(ws,'A8','아래와 같이 견적합니다.',{font:{size:10}}); ws.mergeCells('A8:D8');
   supplierRowsExcel(ws,4,'E','F','H');
-  addStamp(wb, ws, {col:7.35, row:3.15});
+  addStamp(wb, ws, {col:7.35, row:4.08}, 34);
   ws.mergeCells('A10:H10');
-  cell(ws,'A10',`합계금액 : 일금 ${numToHangul(c.total)}整   (₩ ${fmt(c.total)}) ${c.vatLabel}`,{font:{size:12,bold:true},align:{horizontal:'center'},border:bBox,fill:'FFFAFAFA'});
+  cell(ws,'A10',`합계금액 : 일금 ${numToHangul(c.total)}整   (₩ ${fmt(c.total)}) ${c.vatLabel}`,{font:{size:12,bold:true},align:{horizontal:'center',wrapText:false,shrinkToFit:true},border:bBox,fill:'FFFAFAFA'});
   ws.getRow(10).height=26;
   let r=12;
   const th=['품 명','','규 격','수량','수량','단 가','공급가액','비고'];
@@ -760,6 +761,15 @@ function buildEnkSheet(wb){
     (it.detail||'').split('\n').map(s=>s.trim()).filter(Boolean).forEach(l=>{ ws.mergeCells(`A${r}:H${r}`); cell(ws,'A'+r,'└ '+l,{font:{size:8.5,color:{argb:'FF444444'}},border:bAll,fill:'FFFCFCFC'}); r++; });
   });
   ws.mergeCells(`A${r}:H${r}`); cell(ws,'A'+r,'이  하  여  백',{font:{size:9,color:{argb:'FF888888'}},align:{horizontal:'center'},border:bAll}); r++;
+  // A4 한 장 채움: 남은 하단 행 수를 계산해 빈 행으로 패딩
+  {
+    const remain = 6 + termsList().length + (S.supplier.account?1:0);
+    let pad = Math.max(0, 46 - (r + remain - 1));
+    while(pad-- > 0){
+      for(let ci=0;ci<8;ci++) cell(ws,String.fromCharCode(65+ci)+r,'',{border:bAll});
+      ws.mergeCells(`A${r}:B${r}`); r++;
+    }
+  }
   ws.mergeCells(`A${r}:B${r}`); cell(ws,'A'+r,'소 계',{font:{bold:true},align:{horizontal:'center'},border:bAll});
   ws.mergeCells(`C${r}:F${r}`); cell(ws,'C'+r,'',{border:bAll});
   cell(ws,'G'+r,c.sub,{align:{horizontal:'right'},border:bAll,numFmt:'#,##0'});
@@ -768,11 +778,11 @@ function buildEnkSheet(wb){
   ws.mergeCells(`C${r}:F${r}`); cell(ws,'C'+r, c.vat?`부가세 ${fmt(c.vat)}원 별도 가산`:'',{font:{size:8.5},align:{horizontal:'center'},border:bAll});
   cell(ws,'G'+r,c.total,{font:{bold:true},align:{horizontal:'right'},border:bAll,fill:'FFEEF1F4',numFmt:'#,##0'});
   cell(ws,'H'+r,c.vatLabel.replace(/[()]/g,''),{font:{size:7.5},align:{horizontal:'center'},border:bAll}); r+=2;
-  cell(ws,'A'+r,'※ 특이사항',{font:{bold:true,size:9.5}}); r++;
-  termsList().forEach(t=>{ ws.mergeCells(`A${r}:H${r}`); cell(ws,'A'+r,' · '+t,{font:{size:9}}); r++; });
-  if(S.supplier.account){ ws.mergeCells(`A${r}:H${r}`); cell(ws,'A'+r,' · 입금계좌 : '+S.supplier.account,{font:{size:9}}); r++; }
+  ws.mergeCells(`A${r}:H${r}`); cell(ws,'A'+r,'※ 특이사항',{font:{bold:true,size:9.5}}); r++;
+  termsList().forEach(t=>{ ws.mergeCells(`A${r}:H${r}`); cell(ws,'A'+r,' · '+t,{font:{size:9},align:{wrapText:false,shrinkToFit:true}}); r++; });
+  if(S.supplier.account){ ws.mergeCells(`A${r}:H${r}`); cell(ws,'A'+r,' · 입금계좌 : '+S.supplier.account,{font:{size:9},align:{wrapText:false,shrinkToFit:true}}); r++; }
   r++;
-  ws.mergeCells(`A${r}:H${r}`); cell(ws,'A'+r,'붙임 : 사업자등록증 1부, 통장사본 1부.  끝.',{font:{size:9}});
+  ws.mergeCells(`A${r}:H${r}`); cell(ws,'A'+r,'붙임 : 사업자등록증 1부, 통장사본 1부.  끝.',{font:{size:9},align:{wrapText:false,shrinkToFit:true}});
 }
 function buildGianSheet(wb){
   const c=calc();
@@ -787,7 +797,7 @@ function buildGianSheet(wb){
   cell(ws,'A'+r,`제    목 : ${Q.title}`,{font:{size:10}}); ws.mergeCells(`A${r}:C${r}`); r++;
   cell(ws,'A'+r,'아래와 같이 견적합니다.',{font:{size:10}}); ws.mergeCells(`A${r}:C${r}`);
   const supEnd=supplierRowsExcel(ws,4,'D','E','F');
-  addStamp(wb, ws, {col:5.4, row:3.15});
+  addStamp(wb, ws, {col:5.5, row:4.08}, 34);
   r=Math.max(r+2, supEnd+1);
   ['순번','품 명','수 량','단 가','금 액','비 고'].forEach((t,i)=>cell(ws,String.fromCharCode(65+i)+r,t,{font:{bold:true,size:10},align:{horizontal:'center'},border:bAll,fill:'FFEEF1F4'})); r++;
   Q.items.forEach((it,i)=>{
@@ -800,6 +810,15 @@ function buildGianSheet(wb){
     (it.detail||'').split('\n').map(s=>s.trim()).filter(Boolean).forEach(l=>{ ws.mergeCells(`A${r}:F${r}`); cell(ws,'A'+r,'└ '+l,{font:{size:8.5,color:{argb:'FF444444'}},border:bAll,fill:'FFFCFCFC'}); r++; });
   });
   ws.mergeCells(`A${r}:F${r}`); cell(ws,'A'+r,'이  하  여  백',{font:{size:9,color:{argb:'FF888888'}},align:{horizontal:'center'},border:bAll}); r++;
+  // A4 한 장 채움: 남은 하단 행 수를 계산해 빈 행으로 패딩
+  {
+    const remain = 8 + termsList().length;
+    let pad = Math.max(0, 46 - (r + remain - 1));
+    while(pad-- > 0){
+      for(let ci=0;ci<6;ci++) cell(ws,String.fromCharCode(65+ci)+r,'',{border:bAll});
+      r++;
+    }
+  }
   ws.mergeCells(`A${r}:D${r}`); cell(ws,'A'+r,'소 계',{font:{bold:true},align:{horizontal:'center'},border:bAll});
   cell(ws,'E'+r,c.sub,{align:{horizontal:'right'},border:bAll,numFmt:'#,##0'});
   cell(ws,'F'+r,c.cutLabel,{font:{size:7.5},align:{horizontal:'center'},border:bAll}); r++;
@@ -807,11 +826,11 @@ function buildGianSheet(wb){
   cell(ws,'E'+r,c.total,{font:{bold:true},align:{horizontal:'right'},border:bAll,fill:'FFEEF1F4',numFmt:'#,##0'});
   cell(ws,'F'+r,c.vatLabel.replace(/[()]/g,''),{font:{size:7.5},align:{horizontal:'center'},border:bAll}); r+=2;
   ws.mergeCells(`A${r}:F${r}`);
-  cell(ws,'A'+r,`일금 : ${numToHangul(c.total)}整  (₩ ${fmt(c.total)}) ${c.vatLabel}`,{font:{size:12,bold:true},align:{horizontal:'center'},border:bBox}); ws.getRow(r).height=24; r+=2;
-  cell(ws,'A'+r,'※ 특이사항',{font:{bold:true,size:9.5}}); r++;
-  termsList().forEach(t=>{ ws.mergeCells(`A${r}:F${r}`); cell(ws,'A'+r,' · '+t,{font:{size:9}}); r++; });
+  cell(ws,'A'+r,`일금 : ${numToHangul(c.total)}整  (₩ ${fmt(c.total)}) ${c.vatLabel}`,{font:{size:12,bold:true},align:{horizontal:'center',wrapText:false,shrinkToFit:true},border:bBox}); ws.getRow(r).height=24; r+=2;
+  ws.mergeCells(`A${r}:F${r}`); cell(ws,'A'+r,'※ 특이사항',{font:{bold:true,size:9.5}}); r++;
+  termsList().forEach(t=>{ ws.mergeCells(`A${r}:F${r}`); cell(ws,'A'+r,' · '+t,{font:{size:9},align:{wrapText:false,shrinkToFit:true}}); r++; });
   r++;
-  ws.mergeCells(`A${r}:F${r}`); cell(ws,'A'+r,'붙임 : 사업자등록증 1부, 통장사본 1부.  끝.',{font:{size:9}});
+  ws.mergeCells(`A${r}:F${r}`); cell(ws,'A'+r,'붙임 : 사업자등록증 1부, 통장사본 1부.  끝.',{font:{size:9},align:{wrapText:false,shrinkToFit:true}});
 }
 
 /* ═══════════ 이미지 업로드 ═══════════ */
