@@ -166,6 +166,8 @@ table.pl td.k{background:#f4f6f8; text-align:center; font-weight:700; white-spac
 .pe-head select{width:110px; font-size:.82rem; padding:4px 6px;}
 .pe-row textarea{margin-top:8px; font-size:.83rem; line-height:1.5;}
 .pe-edited{color:var(--seal); font-size:.72rem; font-weight:700;}
+.cell-stamp{position:relative; min-height:42px; display:flex; align-items:center; justify-content:center;}
+.cell-stamp img{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:36px; height:36px; mix-blend-mode:multiply;}
 
 /* ── 인쇄(PDF) ── */
 @media print{
@@ -339,6 +341,15 @@ table.pl td.k{background:#f4f6f8; text-align:center; font-weight:700; white-spac
         </div>
         <div class="field"><label>용역명 (내역서)</label><input id="sub_svcName" placeholder="예: 진로체험데이 체험활동"></div>
         <p class="mini">업체명·사업자번호·주소·대표자·직인은 설정의 공급자 정보를 자동 사용합니다.</p>
+        <div style="display:flex; gap:8px; margin-top:12px; align-items:center">
+          <button class="btn pri" onclick="saveSubmit()">기관별로 저장</button>
+          <button class="btn" onclick="newSubmit()">새 문서</button>
+          <span class="mini" id="subEditNote"></span>
+        </div>
+      </div>
+      <div class="card">
+        <h2>저장된 기관 문서 <span class="mini" style="font-weight:400">— 승낙사항·서약서 한 세트</span></h2>
+        <div id="subHistBody"></div>
       </div>
       <div class="card">
         <h2>서약서 항목별 설정 <span class="mini" style="font-weight:400">— 체크 응답 선택과 문구 수정</span></h2>
@@ -1298,6 +1309,9 @@ function pledgePages(){
       </table>
       <span class="pl-note">위의 개인정보 수집ㆍ이용에 대한 동의를 거부할 권리가 있습니다. 다만 거부 시 계약관리 안내 등에 제한을 받을 수 있습니다.</span><br>
       ${dotFmt(SUB.writeDate)}　동의자　${esc(s.ceo)}　　(서명)`;
+  const signCell = S.images.stamp
+    ? `<div class="cell-stamp"><span>(서명 또는 인)</span><img src="${S.images.stamp.dataUrl}" alt="직인"></div>`
+    : `(서명 또는 인)`;
   const items = PLEDGE_DEF.map((d,i)=>{
     const p=SUB.pledge[i];
     let body = esc(pledgeText(i)).replace(/\n/g,'<br>');
@@ -1319,7 +1333,7 @@ function pledgePages(){
     </table>
     <table class="pl">
       <tr><th style="width:5%">순</th><th style="width:15%">구분</th><th>이행 내용</th><th style="width:11%">대표자 확인</th></tr>
-      ${items.map((it,i)=>`<tr><td class="c">${i+1}</td><td class="c">${it[0]}</td><td>${it[1]}</td><td class="c" style="font-size:9px">(서명 또는 인)</td></tr>`).join('')}
+      ${items.map((it,i)=>`<tr><td class="c">${i+1}</td><td class="c">${it[0]}</td><td>${it[1]}</td><td class="c" style="font-size:9px">${signCell}</td></tr>`).join('')}
     </table>
     <div class="pl-foot">
       <p>상기 '계약이행 통합서약서'에 대한 내용에 동의하고 이상이 없음을 확인합니다.</p>
@@ -1343,6 +1357,59 @@ function pledgePages(){
       <p>⑩ 「재난 및 안전관리 기본법」 제60조에 따라 특별재난지역으로 선포된 지역의 재난복구공사(용역)의 경우 결격여부 심사일 현재 계약금액 5천만원 이상 해당업종 관급공사 또는 계약금액 2천만원 이상 관급용역이 3건 이상인 자. 다만, 동시에 여러 건의 수의계약 체결 예정자로 선정된 경우에는 기존 계약을 포함하여 3건까지 수의계약을 체결할 수 있다. (단, 제3절의 "1"에 따른 2인 이상 견적서 제출 수의계약에 한한다)</p>
     </div>
   </div>`;
+}
+/* ── 기관 문서 이력 (승낙사항+서약서 한 세트) ── */
+let subEditingId = SUB.id || null;
+function saveSubmit(){
+  readSubmitForm();
+  if(!SUB.org){ toast('발주기관(학교명)을 입력하세요'); return; }
+  const hist=LS.get('enk_submit_history',[]);
+  const rec=Object.assign(structuredClone(SUB), {id: subEditingId||Date.now(), savedAt:new Date().toISOString()});
+  const idx=hist.findIndex(h=>h.id===rec.id);
+  if(idx>=0) hist[idx]=rec; else hist.unshift(rec);
+  subEditingId=rec.id; SUB.id=rec.id;
+  LS.set('enk_submit_history',hist);
+  LS.set('enk_submit',SUB);   // 새로고침 후에도 같은 기관 문서로 연결
+  renderSubmitHistory();
+  toast(`${SUB.org} 문서 세트가 저장되었습니다`);
+}
+function renderSubmitHistory(){
+  const box=document.getElementById('subHistBody'); if(!box) return;
+  const hist=LS.get('enk_submit_history',[]);
+  document.getElementById('subEditNote').innerHTML = subEditingId
+    ? `<span style="color:var(--ok); font-weight:700; font-size:.8rem">✓ 저장된 문서 수정 중</span>` : '';
+  if(!hist.length){ box.innerHTML='<p class="empty" style="padding:14px">저장된 기관 문서가 없습니다.</p>'; return; }
+  box.innerHTML=`<table class="hist"><tr><th>기관</th><th>계약명</th><th>금액</th><th>작성일</th><th style="width:150px"></th></tr>`+
+    hist.map(h=>`<tr ${h.id===subEditingId?'style="background:#f2f7f3"':''}>
+      <td>${esc(h.org)}</td><td>${esc(h.contractName)}</td>
+      <td style="text-align:right">${won(h.amount||0)}</td><td>${h.writeDate||''}</td>
+      <td style="text-align:right">
+        <button class="btn sm" onclick="loadSubmit(${h.id})">불러오기</button>
+        <button class="btn sm ghost" onclick="delSubmit(${h.id})">삭제</button>
+      </td></tr>`).join('')+'</table>';
+}
+function loadSubmit(id){
+  const h=LS.get('enk_submit_history',[]).find(x=>x.id===id); if(!h) return;
+  SUB=structuredClone(h); normalizePledge(); subEditingId=id;
+  LS.set('enk_submit',SUB);
+  writeSubmitForm(); renderPledgeEditor(); renderSubmitHistory(); renderSubmit();
+  toast(`${SUB.org} 문서를 불러왔습니다 — 수정 후 저장하면 갱신됩니다`);
+}
+function delSubmit(id){
+  if(!confirm('이 기관 문서 세트를 삭제할까요?')) return;
+  LS.set('enk_submit_history', LS.get('enk_submit_history',[]).filter(h=>h.id!==id));
+  if(subEditingId===id){ subEditingId=null; delete SUB.id; LS.set('enk_submit',SUB); }
+  renderSubmitHistory();
+}
+function newSubmit(){
+  if(!confirm('입력 중인 내용을 지우고 새 기관 문서를 시작할까요?')) return;
+  subEditingId=null;
+  SUB={ org:'', contractName:'', amount:0, bondRate:10, startDate:'', endDate:'',
+    writeDate:new Date().toISOString().slice(0,10), delayRate:'1.3', warrantyYears:1,
+    svcCount:1, svcName:'', view:SUB.view||'all', pledge:null };
+  normalizePledge();
+  LS.set('enk_submit',SUB);
+  writeSubmitForm(); renderPledgeEditor(); renderSubmitHistory(); renderSubmit();
 }
 function renderSubmit(){
   readSubmitForm();
@@ -1368,7 +1435,7 @@ function switchTab(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.id==='tab-'+name));
   if(name==='settings'){ writeSettingsForm(); renderSlots(); }
   if(name==='history') renderHistory();
-  if(name==='submit'){ writeSubmitForm(); renderPledgeEditor(); setSubView(SUB.view||'all'); }
+  if(name==='submit'){ writeSubmitForm(); renderPledgeEditor(); renderSubmitHistory(); setSubView(SUB.view||'all'); }
 }
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 
