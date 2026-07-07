@@ -140,13 +140,40 @@ table.hist td{border-bottom:1px solid var(--line-soft); padding:9px 6px; font-va
 .toast{position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--navy-d); color:#fff; padding:10px 20px; border-radius:8px; font-size:.9rem; opacity:0; pointer-events:none; transition:opacity .25s; z-index:99;}
 .toast.show{opacity:1;}
 
+/* ── 기관제출 문서 ── */
+.gv-title{border:1.5px solid #111; text-align:center; font-size:22px; font-weight:800; letter-spacing:.4em; text-indent:.4em; padding:12px 0; margin-bottom:16px;}
+.gv-body{border:1.5px solid #111; padding:26px 24px; font-size:13.5px; line-height:2.05;}
+.gv-body p{margin-bottom:12px; text-align:justify;}
+.gv-body .fill{font-weight:700; border-bottom:1px solid #111; padding:0 4px;}
+.gv-date{text-align:center; font-size:14px; margin:26px 0 22px;}
+.gv-info{font-size:13px; line-height:2.1;}
+.gv-info b{display:inline-block; min-width:150px;}
+.inline-stamp{position:relative; padding:0 8px; white-space:nowrap;}
+.inline-stamp img{position:absolute; left:50%; top:50%; transform:translate(-50%,-52%); width:44px; height:44px; mix-blend-mode:multiply;}
+table.pl{width:100%; border-collapse:collapse; font-size:10px; border:2px solid #111;}
+table.pl th{border:.7px solid #111; background:#eef1f4; padding:5px 4px; font-weight:700;}
+table.pl td{border:.7px solid #111; padding:5px 6px; vertical-align:middle; text-align:justify;}
+table.pl td.c{text-align:center;}
+table.pl td.k{background:#f4f6f8; text-align:center; font-weight:700; white-space:nowrap;}
+.pl-note{font-size:9px; color:#333;}
+.pl-foot{margin-top:20px; font-size:12.5px; text-align:center; line-height:2.2;}
+.exc{font-size:9.5px; line-height:1.7;}
+.exc p{margin-bottom:5px; text-align:justify;}
+
+.pe-row{border:1px solid var(--line); border-radius:8px; padding:9px 11px; margin-bottom:8px; background:#fbfcfd;}
+.pe-head{display:flex; align-items:center; gap:8px;}
+.pe-head b{flex:1; font-size:.86rem;}
+.pe-head select{width:110px; font-size:.82rem; padding:4px 6px;}
+.pe-row textarea{margin-top:8px; font-size:.83rem; line-height:1.5;}
+.pe-edited{color:var(--seal); font-size:.72rem; font-weight:700;}
+
 /* ── 인쇄(PDF) ── */
 @media print{
   body{background:#fff;}
   header,.doc-bar,.card,.compose>div:first-child,nav,.toast{display:none !important;}
   main{max-width:none; padding:0;}
   .tab{display:none !important;}
-  #tab-write{display:block !important;}
+  .tab.on{display:block !important;}
   .compose{display:block;}
   .doc-wrap{position:static;}
   .doc-scroll{max-height:none; overflow:visible; padding:0;}
@@ -163,6 +190,7 @@ table.hist td{border-bottom:1px solid var(--line-soft); padding:9px 6px; font-va
     <nav>
       <button class="on" data-tab="write">견적 작성</button>
       <button data-tab="history">견적 이력</button>
+      <button data-tab="submit">기관제출용</button>
       <button data-tab="settings">설정</button>
     </nav>
   </div>
@@ -278,6 +306,55 @@ table.hist td{border-bottom:1px solid var(--line-soft); padding:9px 6px; font-va
       </div>
     </div>
     <div id="histBody"></div>
+  </div>
+</section>
+
+<!-- ═════════ 기관제출용 ═════════ -->
+<section class="tab" id="tab-submit">
+  <div class="compose">
+    <div><!-- 좌: 입력 -->
+      <div class="card">
+        <h2>계약 정보 <span class="mini" style="font-weight:400">— 학교(발주기관) 제출 서류 자동 완성</span></h2>
+        <div style="margin-bottom:12px"><button class="btn" onclick="pullFromQuote()">현재 견적서에서 가져오기</button></div>
+        <div class="grid2">
+          <div class="field"><label>발주기관 (학교명)</label><input id="sub_org" placeholder="예: 금호초등학교"></div>
+          <div class="field"><label>작성일</label><input type="date" id="sub_writeDate"></div>
+        </div>
+        <div class="field"><label>계약명</label><input id="sub_contractName" placeholder="예: 2026학년도 1학기 진로교육주간 체험활동비 지급"></div>
+        <div class="grid2">
+          <div class="field"><label>계약금액 (원)</label><input type="number" id="sub_amount"></div>
+          <div class="field"><label>계약보증금율 (%)</label><input type="number" id="sub_bondRate" value="10"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>착수일</label><input type="date" id="sub_startDate"></div>
+          <div class="field"><label>완료일</label><input type="date" id="sub_endDate"></div>
+        </div>
+        <div class="grid3">
+          <div class="field"><label>지연배상율 (1000분의)</label><input id="sub_delayRate" value="1.3"></div>
+          <div class="field"><label>하자담보기간 (년)</label><input type="number" id="sub_warrantyYears" value="1"></div>
+          <div class="field"><label>용역 횟수</label><input type="number" id="sub_svcCount" value="1"></div>
+        </div>
+        <div class="field"><label>용역명 (내역서)</label><input id="sub_svcName" placeholder="예: 진로체험데이 체험활동"></div>
+        <p class="mini">업체명·사업자번호·주소·대표자·직인은 설정의 공급자 정보를 자동 사용합니다.</p>
+      </div>
+      <div class="card">
+        <h2>서약서 항목별 설정 <span class="mini" style="font-weight:400">— 체크 응답 선택과 문구 수정</span></h2>
+        <p class="mini" style="margin-bottom:10px">문구에는 {발주기관} {대표자} {업체명} {날짜} 를 쓰면 자동 치환됩니다.</p>
+        <div id="pledgeEditor"></div>
+      </div>
+    </div>
+    <div class="doc-wrap"><!-- 우: 문서 미리보기 -->
+      <div class="doc-bar">
+        <div class="form-toggle">
+          <button id="svAll" class="on" onclick="setSubView('all')">전체</button>
+          <button id="svAccept" onclick="setSubView('accept')">승낙사항</button>
+          <button id="svPledge" onclick="setSubView('pledge')">서약서</button>
+        </div>
+        <div class="spacer"></div>
+        <button class="btn seal" onclick="printSubmit()">인쇄 / PDF 저장</button>
+      </div>
+      <div class="doc-scroll" id="subPreview"></div>
+    </div>
   </div>
 </section>
 
@@ -415,6 +492,7 @@ function calc(){
 
 /* ═══════════ 프리셋 ═══════════ */
 function addPreset(k){
+  readForm();   // 폼에 입력된 학급·인원·차시를 즉시 반영
   const p = {
     lecture:{ name:`강사비 (${Q.sessions||4}차시)`, qtyBasis:'classXsession', unitPrice:0, detail:'', gen:true },
     kit:{ name:'실습 교구비', qtyBasis:'perStudent', unitPrice:15070, detail:'' },
@@ -430,6 +508,7 @@ function addPreset(k){
   Q.items.push(it); renderItems(); refresh();
 }
 function addItem(){
+  readForm();
   Q.items.push({name:'', spec:'', qtyBasis:'fixed', qty1:1, qty2:1, unitPrice:0, detail:'', note:'', showGen:false, autoGen:false, segs:[{h:1,r:90000},{h:Math.max((Q.sessions||4)-1,1),r:60000}]});
   renderItems(); refresh();
 }
@@ -986,7 +1065,9 @@ function saveQuote(){
   const idx=hist.findIndex(h=>h.id===rec.id);
   if(idx>=0) hist[idx]=rec; else { hist.unshift(rec); commitQuoteNo(Q.quoteNo); }
   editingId=rec.id; Q.id=rec.id;
-  LS.set('enk_history',hist); renderHistory();
+  LS.set('enk_history',hist);
+  LS.set('enk_draft',Q);   // 저장 직후 임시저장에도 id 반영 → 새로고침해도 같은 이력으로 연결
+  renderHistory();
   toast('이력에 저장되었습니다');
 }
 function renderHistory(){
@@ -1040,12 +1121,228 @@ function resetQuote(){
   editingId=null; Q=newQuote(); writeForm(); refresh();
 }
 
+/* ═══════════ 기관제출용 (승낙사항 · 통합서약서) ═══════════ */
+let SUB = LS.get('enk_submit', { org:'', contractName:'', amount:0, bondRate:10,
+  startDate:'', endDate:'', writeDate:new Date().toISOString().slice(0,10),
+  delayRate:'1.3', warrantyYears:1, svcCount:1, svcName:'', view:'all', pledge:null });
+
+/* 서약서 10개 항목 기본값: 제목 / 기본 문구(치환 토큰 사용) / 기본 체크 */
+const PLEDGE_DEF=[
+ {t:'계약일반조건', check:'none', body:`우리 업체는 「지방자치단체 입찰 및 계약 집행기준」 제9장 계약 일반조건을 준수합니다.`},
+ {t:'조세포탈 등을 한 자에 해당하지 않음', check:'none', body:`우리 업체는 「지방자치단체를 당사자로 하는 계약에 관한 법률」 제31조의5에 따른 조세포탈 등을 한 자가 아님을 서약하며, 조세포탈 등을 한 자에 해당하여 유죄판결이 확정된 날부터 2년이 지나지 않은 사실이 발견된 때에는 계약을 해제ㆍ해지를 감수하겠으며, 「지방계약법 시행령」 제93조에 따라 부정당업자의 입찰참가자격 제한 처분을 받겠습니다.`},
+ {t:'안전·보건관리 준수 서약서', check:'none', body:`우리 업체는 {발주기관}의 계약을 수행함에 있어 산업재해예방을 위하여 「산업안전보건법, 중대재해처벌법」 등 안전·보건 관련 법규에서 정한 필수사항을 철저히 준수할 것을 서약합니다. 본 계약을 수행함에 있어 위에 언급한 내용대로 계약을 성실히 이행할 것이며, 이행하지 않을 경우 계약해지, 입찰참가자격 제한조치 등 불이익 처분을 받더라도 하등의 이의를 제기하지 아니할 것을 확약하고, 사업 수행 전 안전·보건관리계획서를 해당 시 제출하고 사업이행 시 {발주기관}의 안전보건관리 활동과 점검에 적극 협조하겠습니다.`},
+ {t:'개인정보 수집·이용 동의', check:'none', extra:'privacy', body:`『개인정보 보호법 제15조, 제22조』에 따라 아래와 같이 개인정보를 수집 및 이용하고자 합니다.`},
+ {t:'[공사] 전기·수도 사용료 납부 확약서', check:'na', body:`우리 업체는 공사용 임시 전기·수도를 설치하여 사용할 수 없으므로 {발주기관}의 전기 및 수도를 사용 후 대한건설협회 '완성공사원가분석' 경비율에 의한 계산식으로 전기료 및 수도료를 {발주기관}에 세입조치하고 이의를 제기하지 않겠습니다.`},
+ {t:'계약보증금 지급 각서', check:'yes', body:`「지방자치단체를 당사자로 하는 계약에 관한 법률 시행령」 제54조에 따라 계약보증금 세입조치 사유가 발생하면 즉시 해당하는 금액을 현금으로 납부하겠습니다.`},
+ {t:'하자보수보증금 지급 확약서', check:'yes', body:`「지방자치단체를 당사자로 하는 계약에 관한 법률 시행령」 제71조에 따라 하자보수보증금을 {발주기관}에 귀속시켜야 할 사유가 발생하면 즉시 해당하는 금액을 현금으로 납부하겠습니다. (※ 보증금액과 보증기간을 정한 각서 또는 보증서는 별도 제출)`},
+ {t:'수의계약 각서', check:'yes', body:`「지방자치단체 입찰 및 계약 집행기준」 제5장 수의계약 운영요령 별지 제1호
+상기 본인(법인)은 {발주기관}와(과) 수의계약을 체결함에 있어서 붙임 배제사유 중 어느 사유에도 해당되지 않으며 차후에 이러한 사실이 발견된 경우 계약의 해제·해지 및 부정당업자 제재 처분을 받아도 하등의 이유를 제기하지 않겠습니다.
+붙임 : 수의계약 배제사유 1부`},
+ {t:'수의계약 체결 제한 여부 확인서', check:'none', body:`「공직자의 이해충돌 방지법」 제12조에 따른 수의계약 체결 제한 확인 사항
+① 발주기관의 소속 고위공직자, 배우자, 고위공직자의 직계존속·비속 또는 생계를 같이하는 배우자의 직계존속·비속에 해당하는가?　[　] 예　[○] 아니오
+② 위 어느 하나에 해당하는 사람이 대표자인 법인 또는 단체에 해당하는가?　[　] 예　[○] 아니오
+③ 위 어느 하나에 해당하는 사람과 특수한 관계의 사업자(발행주식 총수의 30% 이상, 출자지분 총수의 30% 이상, 자본금 총액의 50% 이상 소유)에 해당하는가?　[　] 예　[○] 아니오
+위와 같이 확인하며, 사실과 다른 경우 어떠한 처벌이나 불이익도 감수할 것을 서약합니다.`},
+ {t:'청렴서약서', check:'yes', body:`『지방자치단체를 당사자로 하는 계약에 관한 법률』 제6조의2에 따라 발주기관의 모든 공사, 물품 및 용역 등의 입찰(견적제출 포함), 낙찰, 계약의 체결 및 이행, 감독·검사 등의 과정(준공·납품 이후 포함)에 참여한 당사 임직원과 대리인은 아래 각 호의 청렴서약 조건을 준수할 것이며, 위반 시 입찰·낙찰 취소, 계약 해제·해지 및 부정당업자 입찰 참가자격 제한 등의 불이익을 감수하고 민·형사상 이의를 제기하지 않을 것임을 약정합니다.
+1. 직접 또는 간접적인 사례, 증여, 금품․향응 등(친인척 등에 대한 부정한 취업 제공 포함)을 제공 또는 약속하거나 수수하지 않겠습니다.
+2. 입찰가격의 사전협의 또는 특정인의 낙찰을 위한 담합 등 입찰의 자유경쟁을 방해하는 행위나 불공정한 행위를 하지 않겠습니다.
+3. 공정한 직무수행을 방해하는 알선․청탁을 통하여 입찰 또는 계약과 관련된 특정 정보의 제공을 요구하거나 받는 행위를 하지 않겠습니다.`}
+];
+function normalizePledge(){
+  if(!Array.isArray(SUB.pledge)||SUB.pledge.length!==PLEDGE_DEF.length)
+    SUB.pledge=PLEDGE_DEF.map(d=>({check:d.check, text:null}));
+  if(SUB.elec){ SUB.pledge[4].check=SUB.elec; delete SUB.elec; }   // 구버전 데이터 이전
+}
+normalizePledge();
+const pledgeOpen={};
+function pledgeText(i){
+  const raw = SUB.pledge[i].text ?? PLEDGE_DEF[i].body;
+  return raw.replaceAll('{발주기관}', SUB.org||'○○학교')
+            .replaceAll('{대표자}', S.supplier.ceo||'')
+            .replaceAll('{업체명}', S.supplier.name||'')
+            .replaceAll('{날짜}', dotFmt(SUB.writeDate));
+}
+function renderPledgeEditor(){
+  const box=document.getElementById('pledgeEditor'); if(!box) return;
+  box.innerHTML = PLEDGE_DEF.map((d,i)=>{
+    const p=SUB.pledge[i];
+    return `<div class="pe-row">
+      <div class="pe-head">
+        <b>${i+1}. ${d.t} ${p.text!==null?'<span class="pe-edited">수정됨</span>':''}</b>
+        <select onchange="updPledgeCheck(${i},this.value)">
+          <option value="none" ${p.check==='none'?'selected':''}>체크 없음</option>
+          <option value="yes" ${p.check==='yes'?'selected':''}>[○] 예</option>
+          <option value="no" ${p.check==='no'?'selected':''}>[○] 아니오</option>
+          <option value="na" ${p.check==='na'?'selected':''}>[○] 해당없음</option>
+        </select>
+        <button class="btn ghost sm" onclick="togglePledgeEdit(${i})">${pledgeOpen[i]?'닫기':'문구 수정'}</button>
+      </div>
+      ${pledgeOpen[i]?`
+        <textarea rows="5" oninput="updPledgeText(${i},this.value)">${esc(p.text ?? PLEDGE_DEF[i].body)}</textarea>
+        <div style="margin-top:6px; text-align:right"><button class="btn sm" onclick="resetPledgeText(${i})">기본 문구로 되돌리기</button></div>`:''}
+    </div>`;
+  }).join('');
+}
+function updPledgeCheck(i,v){ SUB.pledge[i].check=v; LS.set('enk_submit',SUB); renderSubmit(); }
+function togglePledgeEdit(i){ pledgeOpen[i]=!pledgeOpen[i]; renderPledgeEditor(); }
+function updPledgeText(i,v){ SUB.pledge[i].text = (v.trim()===PLEDGE_DEF[i].body.trim()) ? null : v; LS.set('enk_submit',SUB); renderSubmit(); }
+function resetPledgeText(i){ SUB.pledge[i].text=null; renderPledgeEditor(); renderSubmit(); }
+
+const SUB_KEYS=['org','contractName','startDate','endDate','writeDate','delayRate','svcName'];
+const SUB_NUMS=['amount','bondRate','warrantyYears','svcCount'];
+function readSubmitForm(){
+  SUB_KEYS.forEach(k=>SUB[k]=document.getElementById('sub_'+k).value);
+  SUB_NUMS.forEach(k=>SUB[k]=+document.getElementById('sub_'+k).value||0);
+  LS.set('enk_submit',SUB);
+}
+function writeSubmitForm(){
+  SUB_KEYS.forEach(k=>document.getElementById('sub_'+k).value=SUB[k]??'');
+  SUB_NUMS.forEach(k=>document.getElementById('sub_'+k).value=SUB[k]??0);
+}
+function pullFromQuote(){
+  readForm();
+  const c=calc();
+  const y=(Q.quoteDate||'').slice(0,4)||new Date().getFullYear();
+  SUB.org=Q.school||SUB.org;
+  SUB.contractName=SUB.contractName||`${y}학년도 ${Q.title||''}`.trim();
+  SUB.amount=c.total||SUB.amount;
+  SUB.startDate=Q.eduDate||SUB.startDate;
+  SUB.endDate=Q.eduDate||SUB.endDate;
+  SUB.svcName=SUB.svcName||Q.title||'';
+  writeSubmitForm(); renderPledgeEditor(); renderSubmit(); toast('견적서 정보를 가져왔습니다');
+}
+function setSubView(v){ SUB.view=v; LS.set('enk_submit',SUB);
+  ['All','Accept','Pledge'].forEach(x=>document.getElementById('sv'+x).classList.toggle('on', v===x.toLowerCase()));
+  renderSubmit();
+}
+const dotFmt = d => { if(!d) return '    .  .  .'; const [y,m,dd]=d.split('-'); return `${y}.${+m}.${+dd}.`; };
+function stampOn(txt){
+  return S.images.stamp
+    ? `<span class="inline-stamp">${txt}<img src="${S.images.stamp.dataUrl}" alt="직인"></span>`
+    : `<span class="inline-stamp">${txt}</span>`;
+}
+function chk(sel,val,label){ return `[${sel===val?'○':'&nbsp;&nbsp;'}] ${label}`; }
+
+/* ── 문서 1: 승낙사항(용역집행) + 용역내역서 ── */
+function acceptPages(){
+  const s=S.supplier;
+  const unit = SUB.svcCount>0 ? Math.round(SUB.amount/SUB.svcCount) : SUB.amount;
+  return `<div class="a4">
+    <div class="gv-title">승 낙 사 항 ( 용 역 집 행 )</div>
+    <div class="gv-body">
+      <p>1) 계약사항에 의하여 <span class="fill">${fmtDate(SUB.startDate)||'　　　　'}</span> 착수하고 <span class="fill">${fmtDate(SUB.endDate)||'　　　　'}</span> 까지 완료하여야 한다.</p>
+      <p>2) 계약의 변경으로 인하여 계약금액에 증감이 생긴 때에는 명세서상의 그 단가로 증감하고 그 단가에 의하기 어려운 때에는 계약변경 당시의 단가에 의한다.</p>
+      <p>3) 기한내에 용역을 완료하지 못할 때에는 그 지연일수 1일에 대하여 계약금액의 1000분의 <span class="fill">${esc(SUB.delayRate)}</span> 에 해당하는 지연배상금을 납부하여야 하며, 납부하여야 할 금액은 계약대가에서 상계할 수 있다.</p>
+      <p>4) 계약대상자는 그 용역 완료일로부터 <span class="fill">${SUB.warrantyYears}년간</span> 그 용역의 하자에 대하여 담보책임을 진다.</p>
+      <p>5) 기타 이 계약서에 명시되지 아니한 사항은 지방자치단체(국가)를 당사자로 하는 계약에 관한 법률 등의 규정을 준용한다.</p>
+      <div class="gv-date">${fmtDate(SUB.writeDate)}</div>
+      <div class="gv-info">
+        <p><b>계　약　명</b> : ${esc(SUB.contractName)||'—'}</p>
+        <p><b>상호 또는 법인명칭</b> : ${esc(s.name)||'—'}</p>
+        <p><b>주민(법인)등록번호</b> : ${esc(s.bizNo)||'—'}</p>
+        <p><b>전화번호</b> : ${esc(s.phone)||'—'}</p>
+        <p><b>주　　소</b> : ${esc(s.addr)||'—'}</p>
+        <p><b>대 표 자</b> : ${esc(s.ceo)||'—'} ${stampOn('(인)')}</p>
+      </div>
+    </div>
+  </div>
+  <div class="a4">
+    <div class="gv-title">용 역 내 역 서</div>
+    <table class="pl" style="font-size:11.5px">
+      <tr><th style="width:8%">순번</th><th style="width:26%">용역명</th><th style="width:24%">거래처명</th><th>단위 또는 세부사항</th><th style="width:15%">금액</th></tr>
+      <tr><td class="c">1</td><td class="c">${esc(SUB.svcName)||'—'}</td><td class="c">${esc(s.name)}</td>
+        <td class="c">${SUB.svcCount} (회(횟수)) x ${fmt(unit)}</td><td style="text-align:right">${fmt(SUB.amount)}</td></tr>
+      <tr><td class="c" colspan="4" style="font-weight:700">합　계</td><td style="text-align:right; font-weight:700">${fmt(SUB.amount)}</td></tr>
+    </table>
+  </div>`;
+}
+
+/* ── 문서 2: 계약이행 통합서약서 (+ 붙임: 수의계약 배제사유) ── */
+function pledgePages(){
+  const s=S.supplier;
+  const org=esc(SUB.org)||'○○학교';
+  const bond=Math.round(SUB.amount*(SUB.bondRate||10)/100);
+  const sign='<span class="c" style="white-space:nowrap">(서명 또는 인)</span>';
+  const yn=(v)=> v==='none' ? '' : `${chk(v,'yes','예')} ${chk(v,'no','아니오')} ${chk(v,'na','해당없음')}`;
+  const privacyExtra=`<table class="pl" style="margin:6px 0; border-width:1px">
+        <tr><th>항목</th><th>수집ㆍ이용 목적</th><th>보유ㆍ이용기간</th></tr>
+        <tr><td>계약업체명, 계약자명, 업체담당자, 휴대폰 번호, 이메일주소</td><td>계약관리를 위한 안내, 교육수요자 청렴정책 추진, 부패비리 문자 안내</td><td class="c">계약체결일 다음 연도부터 5년</td></tr>
+        <tr><td class="k">직책 / 성명</td><td colspan="2">대표 / ${esc(s.ceo)}　　(휴대폰 : ${esc(s.phone)}${s.email?' / 이메일 : '+esc(s.email):''})</td></tr>
+        <tr><td class="k">동의 여부</td><td colspan="2">■ 예　□ 아니오</td></tr>
+      </table>
+      <span class="pl-note">위의 개인정보 수집ㆍ이용에 대한 동의를 거부할 권리가 있습니다. 다만 거부 시 계약관리 안내 등에 제한을 받을 수 있습니다.</span><br>
+      ${dotFmt(SUB.writeDate)}　동의자　${esc(s.ceo)}　　(서명)`;
+  const items = PLEDGE_DEF.map((d,i)=>{
+    const p=SUB.pledge[i];
+    let body = esc(pledgeText(i)).replace(/\n/g,'<br>');
+    if(d.extra==='privacy') body += '<br>' + privacyExtra;
+    const line = yn(p.check);
+    if(line) body += '<br>' + line;
+    return [d.t.replace('[공사] ',''), body];
+  });
+  const [wy,wm,wd]=(SUB.writeDate||'--').split('-');
+  return `<div class="a4">
+    <div class="gv-title" style="letter-spacing:.2em">계약이행 통합서약서</div>
+    <table class="pl" style="font-size:10.5px; margin-bottom:12px">
+      <tr><td class="k" style="width:14%">계약명</td><td colspan="3">${esc(SUB.contractName)||'—'}</td></tr>
+      <tr><td class="k">계약금액</td><td style="width:36%">금${fmt(SUB.amount)}원</td><td class="k" style="width:14%">계약보증금</td><td>금${fmt(bond)}원</td></tr>
+      <tr><td class="k">업체명</td><td>${esc(s.name)}</td><td class="k">사업자번호</td><td>${esc(s.bizNo)}</td></tr>
+      <tr><td class="k">연락처</td><td>${esc(s.phone)}</td><td class="k">계약기간</td><td>${dotFmt(SUB.startDate)} ~ ${dotFmt(SUB.endDate)}</td></tr>
+      <tr><td class="k">소재지</td><td>${esc(s.addr)}</td><td class="k">대표자</td><td>${esc(s.ceo)}</td></tr>
+      <tr><td class="k">하자보증금률 및<br>하자보증기간</td><td colspan="3">「지방계약법 시행규칙」 제68조 및 제70조에 따름</td></tr>
+    </table>
+    <table class="pl">
+      <tr><th style="width:5%">순</th><th style="width:15%">구분</th><th>이행 내용</th><th style="width:11%">대표자 확인</th></tr>
+      ${items.map((it,i)=>`<tr><td class="c">${i+1}</td><td class="c">${it[0]}</td><td>${it[1]}</td><td class="c" style="font-size:9px">(서명 또는 인)</td></tr>`).join('')}
+    </table>
+    <div class="pl-foot">
+      <p>상기 '계약이행 통합서약서'에 대한 내용에 동의하고 이상이 없음을 확인합니다.</p>
+      <p>${wy}.　${+wm||''}.　${+wd||''}.</p>
+      <p>계약상대자 : ${esc(s.name)}　　대표　${esc(s.ceo)}　${stampOn('(인)')}</p>
+      <p style="font-weight:700; font-size:14px; margin-top:10px">${org}장 귀하</p>
+    </div>
+  </div>
+  <div class="a4">
+    <div class="gv-title" style="letter-spacing:.1em; font-size:17px">붙임 — 수의계약 배제사유</div>
+    <div class="exc">
+      <p>① 견적서 제출 마감일 현재 부도·파산·해산·영업정지 등이 확정된 경우</p>
+      <p>② 입찰참가자격 제한기간 중에 있는 자(법 제31조 제5항에 해당되는 경우 예외)</p>
+      <p>③ 견적서 제출 마감일을 기준으로 법 제31조 또는 다른 법령에 따라 부실이행, 담합행위, 입찰․계약 서류의 허위․위조 제출, 입찰·낙찰·계약이행 관련 뇌물 제공으로 부정당업자 제재 처분을 받고 그 종료일로부터 3개월이 지나지 아니한 자(법 제31조 제5항에 해당되는 경우 예외)</p>
+      <p>④ 공사 또는 기술용역의 경우 기술자 보유현황이 관련법령에 따른 업종등록 기준에 미달하는 자</p>
+      <p>⑤ 견적서 제출 마감일 기준 최근 3개월 이내에 해당 지방자치단체의 입찰․계약 및 그 이행과 관련하여 10일 이상 지연배상금 부과, 정당한 이행명령 거부, 불법하도급, 5회 이상 하자보수 또는 물의를 일으키는 등 신용이 떨어져 계약 체결이 곤란하다고 판단되는 자</p>
+      <p>⑥ 견적서 제출 마감일 기준 최근 3개월 이내에 해당 지방자치단체와의 계약 및 그 이행과 관련하여 정당한 이유 없이 계약에 응하지 아니하거나 포기서를 제출한 사실이 있는 자</p>
+      <p>⑦ 수의계약 체결일 현재 법 제33조에 해당하는 자 (지방자치단체의 장 또는 지방의회의원의 배우자·직계 존비속인 사업자, 해당 공직자 또는 그 가족이 자본금 총액의 50% 이상을 소유한 자, 그 소유업체의 계열회사 등)</p>
+      <p>⑧ 발주기관이 제한한 자격요건 등을 충족하지 아니한 자</p>
+      <p>⑨ 그밖에 계약담당자가 계약이행능력이 없다고 판단되는 명백한 증거가 있는 자</p>
+      <p>⑩ 「재난 및 안전관리 기본법」 제60조에 따라 특별재난지역으로 선포된 지역의 재난복구공사(용역)의 경우 결격여부 심사일 현재 계약금액 5천만원 이상 해당업종 관급공사 또는 계약금액 2천만원 이상 관급용역이 3건 이상인 자. 다만, 동시에 여러 건의 수의계약 체결 예정자로 선정된 경우에는 기존 계약을 포함하여 3건까지 수의계약을 체결할 수 있다. (단, 제3절의 "1"에 따른 2인 이상 견적서 제출 수의계약에 한한다)</p>
+    </div>
+  </div>`;
+}
+function renderSubmit(){
+  readSubmitForm();
+  const el=document.getElementById('subPreview');
+  let out='';
+  if(SUB.view!=='pledge') out+=acceptPages();
+  if(SUB.view!=='accept') out+=pledgePages();
+  el.innerHTML=out;
+}
+function printSubmit(){
+  readSubmitForm(); renderSubmit();
+  toast('인쇄 대화상자에서 "PDF로 저장"을 선택할 수도 있습니다');
+  setTimeout(()=>window.print(), 350);
+}
+SUB_KEYS.concat(SUB_NUMS).forEach(k=>{
+  const el=document.getElementById('sub_'+k);
+  if(el) el.addEventListener(el.tagName==='SELECT'?'change':'input',()=>renderSubmit());
+});
+
 /* ═══════════ 탭 · 초기화 ═══════════ */
 function switchTab(name){
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===name));
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.id==='tab-'+name));
   if(name==='settings'){ writeSettingsForm(); renderSlots(); }
   if(name==='history') renderHistory();
+  if(name==='submit'){ writeSubmitForm(); renderPledgeEditor(); setSubView(SUB.view||'all'); }
 }
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 
@@ -1056,6 +1353,7 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>switchTab(b.dat
 (function init(){
   const draft=LS.get('enk_draft',null);
   if(draft && (draft.items?.length || draft.school || draft.title)) Q=Object.assign(newQuote(),draft);
+  editingId = Q.id || null;   // 불러온 견적은 리로드 후에도 같은 이력으로 갱신
   writeForm(); writeSettingsForm(); renderSlots(); refresh();
 })();
 </script>
