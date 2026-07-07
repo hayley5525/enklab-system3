@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ENK 견적서 자동화</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<style>
+:root{
+  --ink:#232f3a; --sub:#5d6b7a; --navy:#1f3a5f; --navy-d:#16293f;
+  --bg:#edf0f3; --card:#ffffff; --line:#d7dde4; --line-soft:#e8edf2;
+  --seal:#b3392f; --seal-soft:#f7e9e7; --ok:#2f7d4f; --warn:#a15c00; --warn-bg:#fdf3e3;
+  --radius:10px;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html{font-size:15px;}
+body{font-family:"Pretendard Variable",Pretendard,-apple-system,"Malgun Gothic",sans-serif; background:var(--bg); color:var(--ink); line-height:1.55;}
+button{font-family:inherit; cursor:pointer;}
+input,select,textarea{font-family:inherit; font-size:.95rem; color:var(--ink); border:1px solid var(--line); border-radius:6px; padding:7px 9px; background:#fff; width:100%;}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--navy); outline-offset:1px;}
+input[type=number]{text-align:right;}
+label{font-size:.8rem; font-weight:600; color:var(--sub); display:block; margin-bottom:4px;}
+
+/* ── 상단 헤더 ── */
+header{background:var(--navy-d); color:#fff; padding:0 22px;}
+.head-in{max-width:1420px; margin:0 auto; display:flex; align-items:center; gap:26px; flex-wrap:wrap;}
+.brand{padding:14px 0; display:flex; align-items:baseline; gap:10px;}
+.brand b{font-size:1.12rem; letter-spacing:-.01em;}
+.brand span{font-size:.78rem; color:#9fb2c8;}
+nav{display:flex; gap:4px; margin-left:auto;}
+nav button{background:none; border:none; color:#c3d0de; font-size:.92rem; font-weight:600; padding:16px 14px; border-bottom:3px solid transparent;}
+nav button.on{color:#fff; border-bottom-color:var(--seal);}
+nav button:hover{color:#fff;}
+
+main{max-width:1420px; margin:0 auto; padding:20px 22px 60px;}
+.tab{display:none;}
+.tab.on{display:block;}
+
+/* ── 작성 화면: 좌 폼 / 우 미리보기 ── */
+.compose{display:grid; grid-template-columns:minmax(430px,540px) 1fr; gap:20px; align-items:start;}
+@media(max-width:1080px){ .compose{grid-template-columns:1fr;} .doc-wrap{position:static !important;} }
+
+.card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px; margin-bottom:16px;}
+.card h2{font-size:.95rem; margin-bottom:12px; display:flex; align-items:center; gap:8px;}
+.card h2::before{content:""; width:4px; height:14px; background:var(--seal); border-radius:2px;}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;}
+.field{margin-bottom:10px;}
+
+/* 품목 테이블 */
+.items-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+.presets{display:flex; gap:6px; flex-wrap:wrap;}
+.presets button{background:#f2f5f8; border:1px solid var(--line); border-radius:20px; padding:4px 12px; font-size:.82rem; font-weight:600; color:var(--navy);}
+.presets button:hover{background:var(--seal-soft); border-color:var(--seal); color:var(--seal);}
+.item-card{border:1px solid var(--line); border-radius:8px; padding:12px; margin-bottom:10px; background:#fbfcfd;}
+.item-top{display:grid; grid-template-columns:1fr 110px; gap:8px; margin-bottom:8px;}
+.item-nums{display:grid; grid-template-columns:1.2fr .8fr .8fr 1fr 1.2fr; gap:8px; margin-bottom:8px;}
+.item-amt{font-weight:700; text-align:right; padding:7px 9px; background:#eef3f8; border-radius:6px; border:1px solid var(--line-soft); font-variant-numeric:tabular-nums;}
+.item-foot{display:flex; gap:8px; align-items:center;}
+.item-foot input{flex:1;}
+.mini{font-size:.78rem; color:var(--sub);}
+.btn{border:1px solid var(--line); background:#fff; border-radius:6px; padding:7px 13px; font-size:.88rem; font-weight:600; color:var(--ink);}
+.btn:hover{border-color:var(--navy); color:var(--navy);}
+.btn.pri{background:var(--navy); border-color:var(--navy); color:#fff;}
+.btn.pri:hover{background:var(--navy-d);}
+.btn.seal{background:var(--seal); border-color:var(--seal); color:#fff;}
+.btn.seal:hover{filter:brightness(.92);}
+.btn.ghost{border:none; background:none; color:var(--sub); padding:4px 6px;}
+.btn.ghost:hover{color:var(--seal);}
+.btn.sm{padding:4px 10px; font-size:.8rem;}
+.btn:disabled{opacity:.45; cursor:not-allowed;}
+
+.sum-box{border-top:2px solid var(--navy); padding-top:10px; font-variant-numeric:tabular-nums;}
+.sum-row{display:flex; justify-content:space-between; padding:4px 2px; font-size:.95rem;}
+.sum-row.total{font-size:1.15rem; font-weight:800; color:var(--navy);}
+.hangul-amt{text-align:right; font-size:.82rem; color:var(--seal); font-weight:600;}
+
+/* 세부내역 생성기 */
+.detail-gen{background:#f2f5f8; border:1px dashed var(--line); border-radius:6px; padding:10px; margin-top:8px;}
+.detail-gen .seg{display:grid; grid-template-columns:1fr 1fr 34px; gap:6px; margin-bottom:6px;}
+
+/* ── A4 미리보기 ── */
+.doc-wrap{position:sticky; top:16px;}
+.doc-bar{display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap;}
+.doc-bar .spacer{flex:1;}
+.form-toggle{display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+.form-toggle button{border:none; background:#fff; padding:7px 16px; font-size:.88rem; font-weight:700; color:var(--sub);}
+.form-toggle button.on{background:var(--navy); color:#fff;}
+.doc-scroll{max-height:calc(100vh - 130px); overflow:auto; padding:4px;}
+.a4{width:794px; min-height:1123px; background:#fff; box-shadow:0 2px 14px rgba(20,35,55,.16); margin:0 auto 18px; padding:56px 52px; position:relative; font-family:"Malgun Gothic","Pretendard Variable",sans-serif; color:#111;}
+@media(max-width:900px){ .a4{transform-origin:top left; transform:scale(.72); margin-bottom:-280px;} }
+
+/* 문서 내부 */
+.q-title{text-align:center; font-size:34px; font-weight:800; letter-spacing:.55em; text-indent:.55em; margin-bottom:4px;}
+.q-no{text-align:right; font-size:11px; color:#333; margin-bottom:14px;}
+.q-head{display:flex; gap:14px; margin-bottom:14px;}
+.q-left{flex:1; font-size:13px; padding-top:6px;}
+.q-left p{margin-bottom:7px;}
+.q-left .to{font-size:16px; font-weight:700; border-bottom:1px solid #111; display:inline-block; padding:0 6px 2px 2px;}
+.sup{width:330px; border:1.2px solid #111; font-size:11.5px; position:relative;}
+.sup table{width:100%; border-collapse:collapse;}
+.sup td{border:.6px solid #444; padding:4px 6px;}
+.sup td.k{background:#f0f2f5; width:72px; text-align:center; font-weight:700; white-space:nowrap;}
+.stamp-spot{position:absolute; right:10px; top:26px; width:64px; height:64px;}
+.stamp-spot img{width:100%; height:100%; object-fit:contain; mix-blend-mode:multiply;}
+.q-intro{font-size:13px; margin:10px 0 6px;}
+.q-total-line{border:1.4px solid #111; padding:8px 12px; font-size:14px; font-weight:700; display:flex; justify-content:space-between; margin-bottom:12px; background:#fafafa;}
+table.q-items{width:100%; border-collapse:collapse; font-size:12px;}
+table.q-items th{border:.8px solid #111; background:#eef1f4; padding:6px 4px; font-weight:700;}
+table.q-items td{border:.8px solid #111; padding:5px 6px; vertical-align:middle;}
+table.q-items td.num{text-align:right; font-variant-numeric:tabular-nums;}
+table.q-items td.cen{text-align:center;}
+table.q-items td.detail{font-size:10.5px; color:#333; background:#fcfcfc;}
+.q-terms{margin-top:14px; font-size:11.5px;}
+.q-terms b{display:block; margin-bottom:4px; font-size:12px;}
+.q-terms li{margin-left:16px; margin-bottom:2px;}
+.q-attach{margin-top:12px; font-size:11.5px; color:#333;}
+.attach-page{display:flex; flex-direction:column; align-items:center;}
+.attach-page h3{align-self:flex-start; font-size:15px; margin-bottom:16px; border-left:5px solid var(--seal); padding-left:10px;}
+.attach-page img{max-width:100%; max-height:940px; border:1px solid #ccc;}
+.attach-missing{color:var(--warn); background:var(--warn-bg); border:1px dashed var(--warn); padding:30px; text-align:center; font-size:13px; width:100%;}
+
+/* ── 설정 ── */
+.settings-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start;}
+@media(max-width:900px){ .settings-grid{grid-template-columns:1fr;} }
+.upload-slot{border:1.5px dashed var(--line); border-radius:8px; padding:12px; text-align:center; margin-bottom:12px; background:#fbfcfd;}
+.upload-slot.filled{border-style:solid; border-color:var(--ok);}
+.upload-slot img{max-height:110px; max-width:100%; margin:8px auto; display:block;}
+.upload-slot .name{font-size:.78rem; color:var(--sub); word-break:break-all;}
+.slot-btns{display:flex; gap:6px; justify-content:center; margin-top:6px;}
+.badge-warn{display:inline-block; background:var(--warn-bg); color:var(--warn); font-size:.75rem; font-weight:700; padding:2px 8px; border-radius:10px;}
+
+/* ── 이력 ── */
+table.hist{width:100%; border-collapse:collapse; font-size:.9rem;}
+table.hist th{border-bottom:2px solid var(--navy); text-align:left; padding:8px 6px; font-size:.8rem; color:var(--sub);}
+table.hist td{border-bottom:1px solid var(--line-soft); padding:9px 6px; font-variant-numeric:tabular-nums;}
+.empty{padding:36px; text-align:center; color:var(--sub); font-size:.92rem;}
+
+.toast{position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--navy-d); color:#fff; padding:10px 20px; border-radius:8px; font-size:.9rem; opacity:0; pointer-events:none; transition:opacity .25s; z-index:99;}
+.toast.show{opacity:1;}
+
+/* ── 인쇄(PDF) ── */
+@media print{
+  body{background:#fff;}
+  header,.doc-bar,.card,.compose>div:first-child,nav,.toast{display:none !important;}
+  main{max-width:none; padding:0;}
+  .tab{display:none !important;}
+  #tab-write{display:block !important;}
+  .compose{display:block;}
+  .doc-wrap{position:static;}
+  .doc-scroll{max-height:none; overflow:visible; padding:0;}
+  .a4{width:auto; min-height:auto; box-shadow:none; margin:0; padding:14mm 12mm; page-break-after:always;}
+  .a4:last-child{page-break-after:auto;}
+}
+@page{size:A4; margin:0;}
+</style>
+</head>
+<body>
+<header>
+  <div class="head-in">
+    <div class="brand"><b>ENK 견적서 자동화</b><span>AI 융합 교육 프로그램</span></div>
+    <nav>
+      <button class="on" data-tab="write">견적 작성</button>
+      <button data-tab="history">견적 이력</button>
+      <button data-tab="settings">설정</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+<!-- ═════════ 견적 작성 ═════════ -->
+<section class="tab on" id="tab-write">
+  <div class="compose">
+    <div><!-- 좌: 입력 폼 -->
+      <div class="card">
+        <h2>기본 정보</h2>
+        <div class="grid2">
+          <div class="field"><label>견적번호 (자동)</label><input id="quoteNo" readonly style="background:#f2f5f8"></div>
+          <div class="field"><label>견적일</label><input type="date" id="quoteDate"></div>
+        </div>
+        <div class="field"><label>견적명</label><input id="title" placeholder="예: AI 융합 진로 캠프"></div>
+        <div class="field"><label>교육일</label><input type="date" id="eduDate"></div>
+        <div class="grid2">
+          <div class="field"><label>수신 (학교명)</label><input id="school" placeholder="예: 경산장산중학교"></div>
+          <div class="field"><label>담당 부서</label><input id="dept" placeholder="예: 진로진학담당부서"></div>
+        </div>
+        <div class="field"><label>견적 유효기간 (일)</label><input type="number" id="validDays" value="10" min="1"></div>
+      </div>
+
+      <div class="card">
+        <h2>공통 수량 <span class="mini" style="font-weight:400">— 변경 시 연동된 품목이 자동 재계산됩니다</span></h2>
+        <div class="grid3">
+          <div class="field"><label>학급 수</label><input type="number" id="classCount" value="1" min="0"></div>
+          <div class="field"><label>총 인원</label><input type="number" id="studentTotal" value="0" min="0"></div>
+          <div class="field"><label>차시 수</label><input type="number" id="sessions" value="4" min="0"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="items-head">
+          <h2 style="margin:0">품목</h2>
+          <button class="btn sm" onclick="addItem()">+ 직접 추가</button>
+        </div>
+        <div class="presets" style="margin-bottom:12px">
+          <button onclick="addPreset('lecture')">강사료</button>
+          <button onclick="addPreset('kit')">교구비 (1인1교구)</button>
+          <button onclick="addPreset('coach')">학습코칭키트</button>
+          <button onclick="addPreset('ops')">운영비</button>
+          <button onclick="addPreset('banner')">현수막</button>
+          <button onclick="addPreset('book')">교재비</button>
+        </div>
+        <div id="itemList"></div>
+
+        <div class="grid2" style="margin:12px 0">
+          <div class="field"><label>절사 규칙</label>
+            <select id="rounding">
+              <option value="none">절사 없음</option>
+              <option value="thousand">천원 단위 이하 절사</option>
+              <option value="tenthousand" selected>만원 단위 이하 절사</option>
+            </select>
+          </div>
+          <div class="field"><label>부가세 (VAT)</label>
+            <select id="vatMode">
+              <option value="included" selected>과세 · VAT 포함</option>
+              <option value="excluded">과세 · VAT 별도 (10% 가산)</option>
+              <option value="exempt">면세</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="sum-box">
+          <div class="sum-row"><span>소계</span><span id="sumSub">0원</span></div>
+          <div class="sum-row" id="rowCut" style="display:none"><span id="cutLabel">절사</span><span id="sumCut">0원</span></div>
+          <div class="sum-row" id="rowVat" style="display:none"><span>부가세 (10%)</span><span id="sumVat">0원</span></div>
+          <div class="sum-row total"><span>총계 <span class="mini" id="vatNote"></span></span><span id="sumTotal">0원</span></div>
+          <div class="hangul-amt" id="sumHangul"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>특이사항</h2>
+        <textarea id="terms" rows="4" placeholder="한 줄에 한 항목씩 입력"></textarea>
+        <p class="mini" style="margin-top:6px">기본 문구는 설정에서 변경할 수 있습니다. {유효기간} 은 자동 치환됩니다.</p>
+      </div>
+
+      <div class="card" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center">
+        <button class="btn pri" onclick="saveQuote()">이력에 저장</button>
+        <button class="btn" onclick="resetQuote()">새 견적</button>
+        <span class="mini" id="attachStatus"></span>
+      </div>
+    </div>
+
+    <div class="doc-wrap"><!-- 우: 미리보기 + 출력 -->
+      <div class="doc-bar">
+        <div class="form-toggle">
+          <button id="ftEnk" class="on" onclick="setForm('enk')">ENK 양식</button>
+          <button id="ftGian" onclick="setForm('gian')">학교 기안용</button>
+        </div>
+        <div class="spacer"></div>
+        <button class="btn seal" onclick="exportExcel()">엑셀(.xlsx) 다운로드</button>
+        <button class="btn" onclick="exportPdf()">PDF 저장 (인쇄)</button>
+      </div>
+      <div class="doc-scroll" id="preview"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 견적 이력 ═════════ -->
+<section class="tab" id="tab-history">
+  <div class="card">
+    <div class="items-head">
+      <h2 style="margin:0">저장된 견적</h2>
+      <div style="display:flex; gap:6px">
+        <button class="btn sm" onclick="exportHistory()">JSON 내보내기</button>
+        <button class="btn sm" onclick="document.getElementById('histFile').click()">JSON 가져오기</button>
+        <input type="file" id="histFile" accept=".json" hidden onchange="importHistory(this)">
+      </div>
+    </div>
+    <div id="histBody"></div>
+  </div>
+</section>
+
+<!-- ═════════ 설정 ═════════ -->
+<section class="tab" id="tab-settings">
+  <div class="settings-grid">
+    <div class="card">
+      <h2>공급자 정보</h2>
+      <div class="grid2">
+        <div class="field"><label>사업자등록번호</label><input id="s_bizNo"></div>
+        <div class="field"><label>대표자</label><input id="s_ceo"></div>
+      </div>
+      <div class="field"><label>상호</label><input id="s_name"></div>
+      <div class="field"><label>소재지</label><input id="s_addr"></div>
+      <div class="grid2">
+        <div class="field"><label>업태</label><input id="s_bizType"></div>
+        <div class="field"><label>종목</label><input id="s_bizItem"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>연락처</label><input id="s_phone"></div>
+        <div class="field"><label>이메일</label><input id="s_email"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>담당자</label><input id="s_manager"></div>
+        <div class="field"><label>입금 계좌</label><input id="s_account" placeholder="은행 계좌번호 (예금주)"></div>
+      </div>
+      <div class="field"><label>특이사항 기본 문구 (한 줄에 한 항목, {유효기간} 자동 치환)</label>
+        <textarea id="s_terms" rows="4"></textarea></div>
+      <button class="btn pri" onclick="saveSettings(true)">공급자 정보 저장</button>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>이미지 업로드 <span class="mini" style="font-weight:400">— 브라우저에만 저장되며 외부로 전송되지 않습니다</span></h2>
+        <div id="slotArea"></div>
+      </div>
+      <div class="card">
+        <h2>설정 백업 (여러 기기 사용)</h2>
+        <p class="mini" style="margin-bottom:10px">공급자 정보와 이미지 3종을 파일 하나로 내보내고, 다른 PC에서 가져오면 동일한 환경이 됩니다.</p>
+        <div style="display:flex; gap:8px">
+          <button class="btn pri" onclick="exportSettings()">설정 내보내기</button>
+          <button class="btn" onclick="document.getElementById('setFile').click()">설정 가져오기</button>
+          <input type="file" id="setFile" accept=".json" hidden onchange="importSettings(this)">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+<div class="toast" id="toast"></div>
+<script>
+/* ═══════════ 상태 ═══════════ */
+const LS = { set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)), get:(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}} };
+const DEFAULT_TERMS = "본 견적서는 견적일로부터 {유효기간}일간 유효합니다.\n행사 마감 후 15일 이내 입금을 요청드립니다.\n계산서는 교육 완료 후 발행됩니다.";
+
+let S = LS.get('enk_settings', {
+  supplier:{ bizNo:'', ceo:'', name:'', addr:'', bizType:'', bizItem:'', phone:'', email:'', manager:'', account:'' },
+  terms: DEFAULT_TERMS,
+  images:{ bizCert:null, bankCopy:null, stamp:null }   // {dataUrl,w,h,fileName}
+});
+let Q = newQuote();
+let currentForm = 'enk';
+let editingId = null;   // 이력에서 불러온 견적 id
+
+function newQuote(){
+  const today = new Date().toISOString().slice(0,10);
+  return { id:null, quoteNo: nextQuoteNo(), revision:0,
+    title:'', subtitle:'', quoteDate:today, eduDate:'', school:'', dept:'',
+    validDays:10, classCount:1, studentTotal:0, sessions:4,
+    items:[], rounding:'tenthousand', vatMode:'included',
+    terms: S.terms };
+}
+function nextQuoteNo(){
+  const y = new Date().getFullYear();
+  const c = LS.get('enk_counter', {year:y, n:0});
+  const n = (c.year===y ? c.n : 0) + 1;
+  return `ENK-${y}-${String(n).padStart(3,'0')}`;
+}
+function commitQuoteNo(no){
+  const m = no.match(/^ENK-(\d{4})-(\d{3})/); if(!m) return;
+  const y=+m[1], n=+m[2], c=LS.get('enk_counter',{year:y,n:0});
+  if(c.year!==y || n>c.n) LS.set('enk_counter',{year:y, n:Math.max(n, c.year===y?c.n:0)});
+}
+
+/* ═══════════ 유틸 ═══════════ */
+const fmt = n => (Math.round(n)||0).toLocaleString('ko-KR');
+const won = n => fmt(n)+'원';
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._tm); t._tm=setTimeout(()=>t.classList.remove('show'),2200); }
+function esc(s){ return String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function fmtDate(d){ if(!d) return ''; const [y,m,dd]=d.split('-'); return `${y}년 ${+m}월 ${+dd}일`; }
+
+/* 숫자 → 한글 금액 (일금 오백삼십이만원整) */
+function numToHangul(n){
+  n = Math.round(n)||0; if(n===0) return '영원';
+  const dg=['','일','이','삼','사','오','육','칠','팔','구'], pos=['','십','백','천'], grp=['','만','억','조'];
+  let out='', gi=0;
+  while(n>0){
+    const part = n%10000; n = Math.floor(n/10000);
+    if(part){
+      let s='';
+      String(part).split('').reverse().forEach((ch,i)=>{
+        const d=+ch; if(!d) return;
+        s = (d===1 && i>0 ? '' : dg[d]) + pos[i] + s;
+      });
+      out = s + grp[gi] + out;
+    }
+    gi++;
+  }
+  return out + '원';
+}
+
+/* ═══════════ 계산 엔진 ═══════════ */
+const BASIS = {
+  classXsession:{label:'학급 × 1',      spec:'학급X차시', q:()=>[Q.classCount,1]},
+  perStudent:  {label:'1 × 인원',       spec:'1인1교구',  q:()=>[1,Q.studentTotal]},
+  perClass:    {label:'학급 수',        spec:'학급당',    q:()=>[Q.classCount,1]},
+  fixed:       {label:'고정 수량',      spec:'',          q:null}
+};
+function applyBasis(it){
+  const b = BASIS[it.qtyBasis];
+  if(b && b.q){ const [a,c]=b.q(); it.qty1=a; it.qty2=c; }
+}
+function itemAmount(it){ return (it.qty1||0)*(it.qty2||0)*(it.unitPrice||0); }
+function calc(){
+  const sub = Q.items.reduce((s,it)=>s+itemAmount(it),0);
+  const unit = Q.rounding==='thousand'?1000 : Q.rounding==='tenthousand'?10000 : 1;
+  const afterCut = Math.floor(sub/unit)*unit;
+  const cut = sub-afterCut;
+  const vat = Q.vatMode==='excluded' ? Math.round(afterCut*0.1) : 0;
+  const total = afterCut + vat;
+  return {sub, cut, vat, total,
+    cutLabel: Q.rounding==='thousand'?'천원 단위 이하 절사':Q.rounding==='tenthousand'?'만원 단위 이하 절사':'',
+    vatLabel: Q.vatMode==='included'?'(부가가치세 포함)':Q.vatMode==='excluded'?'(부가가치세 별도)':'(면세)'};
+}
+
+/* ═══════════ 프리셋 ═══════════ */
+function addPreset(k){
+  const p = {
+    lecture:{ name:`강사비 (${Q.sessions||4}차시)`, qtyBasis:'classXsession', unitPrice:0, detail:'', gen:true },
+    kit:{ name:'실습 교구비', qtyBasis:'perStudent', unitPrice:15070, detail:'' },
+    coach:{ name:'학습코칭키트', qtyBasis:'perStudent', unitPrice:20000, detail:'유성매직 10세트, 유인물(교재대체), 로봇활용맵' },
+    ops:{ name:'운영비', qtyBasis:'fixed', unitPrice:100000, detail:'' },
+    banner:{ name:'현수막', qtyBasis:'fixed', unitPrice:50000, detail:'' },
+    book:{ name:'교재비', qtyBasis:'perStudent', unitPrice:5000, detail:'' }
+  }[k];
+  const it = { name:p.name, spec:BASIS[p.qtyBasis].spec, qtyBasis:p.qtyBasis, qty1:1, qty2:1, unitPrice:p.unitPrice, detail:p.detail, note:'', showGen:!!p.gen, autoGen:!!p.gen,
+    segs:[{h:1,r:90000},{h:Math.max((Q.sessions||4)-1,1),r:60000}] };
+  applyBasis(it);
+  if(p.gen) genDetailCore(it);   // 강사료: 세부내역 자동 셋팅
+  Q.items.push(it); renderItems(); refresh();
+}
+function addItem(){
+  Q.items.push({name:'', spec:'', qtyBasis:'fixed', qty1:1, qty2:1, unitPrice:0, detail:'', note:'', showGen:false, autoGen:false, segs:[{h:1,r:90000},{h:Math.max((Q.sessions||4)-1,1),r:60000}]});
+  renderItems(); refresh();
+}
+function delItem(i){ Q.items.splice(i,1); renderItems(); refresh(); }
+function moveItem(i,d){ const j=i+d; if(j<0||j>=Q.items.length)return; [Q.items[i],Q.items[j]]=[Q.items[j],Q.items[i]]; renderItems(); refresh(); }
+
+/* 강사료 세부내역 자동 생성 */
+function genDetailCore(it){
+  const segs=(it.segs||[]).filter(s=>s.h>0&&s.r>0);
+  if(!segs.length) return false;
+  const per = segs.reduce((s,x)=>s+x.h*x.r,0);
+  const expr = segs.map(x=>`(${fmt(x.r)}원×${x.h}시간)`).join(' + ');
+  const cls = Q.classCount||1;
+  it.unitPrice = per; it.qtyBasis='classXsession'; applyBasis(it);
+  it.detail = `1학급 : ${expr} = ${fmt(per)}원   ${cls}학급 : ${fmt(per)}원×${cls}학급 = ${fmt(per*cls)}원`;
+  const hSum = segs.reduce((s,x)=>s+x.h,0);
+  if(/강사/.test(it.name)) it.name = `강사비 (${hSum}차시)`;
+  return true;
+}
+function genDetail(i){
+  const it=Q.items[i];
+  if(!genDetailCore(it)){ toast('시간과 단가를 입력하세요'); return; }
+  it.autoGen=true;
+  renderItems(); refresh();
+}
+
+/* ═══════════ 폼 렌더링 ═══════════ */
+function renderItems(){
+  const box=document.getElementById('itemList');
+  if(!Q.items.length){ box.innerHTML='<p class="empty" style="padding:18px">프리셋 버튼이나 직접 추가로 품목을 넣어주세요.</p>'; return; }
+  box.innerHTML = Q.items.map((it,i)=>{
+    return `<div class="item-card">
+      <div class="item-top">
+        <input placeholder="품명" value="${esc(it.name)}" oninput="upd(${i},'name',this.value)">
+        <input placeholder="규격" value="${esc(it.spec)}" oninput="upd(${i},'spec',this.value)">
+      </div>
+      <div class="item-nums">
+        <div><label>수량 기준</label>
+          <select onchange="updBasis(${i},this.value)">
+            ${Object.entries(BASIS).map(([k,b])=>`<option value="${k}" ${it.qtyBasis===k?'selected':''}>${b.label}</option>`).join('')}
+          </select></div>
+        <div><label>수량1</label><input type="number" value="${it.qty1}" oninput="upd(${i},'qty1',+this.value)"></div>
+        <div><label>수량2</label><input type="number" value="${it.qty2}" oninput="upd(${i},'qty2',+this.value)"></div>
+        <div><label>단가</label><input type="number" value="${it.unitPrice}" oninput="upd(${i},'unitPrice',+this.value)"></div>
+        <div><label>금액</label><div class="item-amt" id="amt${i}">${fmt(itemAmount(it))}</div></div>
+      </div>
+      <div style="margin-bottom:8px"><textarea rows="2" placeholder="세부내역 — 한 줄에 한 항목씩 (문서에 품목 아래 작은 글씨로 표기)" oninput="upd(${i},'detail',this.value)">${esc(it.detail)}</textarea></div>
+      <div class="item-foot">
+        <input placeholder="비고" value="${esc(it.note)}" oninput="upd(${i},'note',this.value)">
+        <button class="btn ghost sm" title="세부내역 자동 생성" onclick="toggleGen(${i})">계산식</button>
+        <button class="btn ghost sm" onclick="moveItem(${i},-1)">↑</button>
+        <button class="btn ghost sm" onclick="moveItem(${i},1)">↓</button>
+        <button class="btn ghost sm" onclick="delItem(${i})">삭제</button>
+      </div>
+      ${it.showGen?`<div class="detail-gen">
+        <p class="mini" style="margin-bottom:6px"><b>강사료 계산식 생성</b> — 시간대별 단가를 입력하면 세부내역·단가가 자동 작성됩니다 (학급 수 연동)</p>
+        ${it.segs.map((s,si)=>`<div class="seg">
+          <input type="number" placeholder="시간" value="${s.h}" oninput="updSeg(${i},${si},'h',+this.value)">
+          <input type="number" placeholder="시간당 단가" value="${s.r}" oninput="updSeg(${i},${si},'r',+this.value)">
+          <button class="btn ghost sm" onclick="delSeg(${i},${si})">✕</button></div>`).join('')}
+        <div style="display:flex; gap:6px">
+          <button class="btn sm" onclick="addSeg(${i})">+ 구간</button>
+          <button class="btn sm pri" onclick="genDetail(${i})">세부내역 생성</button>
+        </div></div>`:''}
+    </div>`;
+  }).join('');
+}
+function upd(i,k,v){ Q.items[i][k]=v; if(k==='detail'||k==='unitPrice') Q.items[i].autoGen=false; document.getElementById('amt'+i).textContent=fmt(itemAmount(Q.items[i])); refresh(false); }
+function updBasis(i,v){ const it=Q.items[i]; it.qtyBasis=v; if(BASIS[v].spec) it.spec=BASIS[v].spec; applyBasis(it); renderItems(); refresh(); }
+function toggleGen(i){ Q.items[i].showGen=!Q.items[i].showGen; renderItems(); }
+function addSeg(i){ Q.items[i].segs.push({h:1,r:0}); renderItems(); }
+function delSeg(i,si){ Q.items[i].segs.splice(si,1); renderItems(); }
+function updSeg(i,si,k,v){ Q.items[i].segs[si][k]=v; }
+
+function readForm(){
+  ['title','quoteDate','eduDate','school','dept','terms'].forEach(k=>Q[k]=document.getElementById(k).value);
+  ['validDays','classCount','studentTotal','sessions'].forEach(k=>Q[k]=+document.getElementById(k).value||0);
+  Q.rounding=document.getElementById('rounding').value;
+  Q.vatMode=document.getElementById('vatMode').value;
+}
+function writeForm(){
+  document.getElementById('quoteNo').value = Q.quoteNo + (Q.revision?`-R${Q.revision}`:'');
+  ['title','quoteDate','eduDate','school','dept','terms'].forEach(k=>document.getElementById(k).value=Q[k]??'');
+  ['validDays','classCount','studentTotal','sessions'].forEach(k=>document.getElementById(k).value=Q[k]??0);
+  document.getElementById('rounding').value=Q.rounding;
+  document.getElementById('vatMode').value=Q.vatMode;
+  renderItems();
+}
+function onCommonChange(){
+  readForm();
+  Q.items.forEach(it=>{
+    applyBasis(it);
+    if(it.autoGen){
+      if(it.segs && it.segs[1]) it.segs[1].h = Math.max((Q.sessions||1)-(it.segs[0]?.h||1), 0);
+      genDetailCore(it);
+    }
+  });
+  renderItems(); refresh();
+}
+
+/* 합계·미리보기 갱신 */
+function refresh(rerenderItems){
+  readForm();
+  const c = calc();
+  document.getElementById('sumSub').textContent = won(c.sub);
+  document.getElementById('rowCut').style.display = c.cut>0?'flex':'none';
+  document.getElementById('cutLabel').textContent = c.cutLabel||'절사';
+  document.getElementById('sumCut').textContent = '−'+won(c.cut);
+  document.getElementById('rowVat').style.display = c.vat>0?'flex':'none';
+  document.getElementById('sumVat').textContent = won(c.vat);
+  document.getElementById('sumTotal').textContent = won(c.total);
+  document.getElementById('vatNote').textContent = c.vatLabel;
+  document.getElementById('sumHangul').textContent = c.total?`일금 ${numToHangul(c.total)}整`:'';
+  renderPreview();
+  updateAttachStatus();
+  LS.set('enk_draft', Q);
+}
+function updateAttachStatus(){
+  const miss=[];
+  if(!S.images.bizCert) miss.push('사업자등록증');
+  if(!S.images.bankCopy) miss.push('통장사본');
+  if(!S.images.stamp) miss.push('직인');
+  document.getElementById('attachStatus').innerHTML = miss.length
+    ? `<span class="badge-warn">미등록: ${miss.join(', ')} — 설정에서 업로드</span>` : '<span style="color:var(--ok);font-size:.8rem;font-weight:700">✓ 직인·첨부 이미지 준비됨</span>';
+}
+/* ═══════════ A4 미리보기 ═══════════ */
+function setForm(f){ currentForm=f;
+  document.getElementById('ftEnk').classList.toggle('on',f==='enk');
+  document.getElementById('ftGian').classList.toggle('on',f==='gian');
+  renderPreview();
+}
+function termsList(){
+  return (Q.terms||'').split('\n').map(s=>s.trim()).filter(Boolean)
+    .map(s=>s.replaceAll('{유효기간}', String(Q.validDays||10)));
+}
+function stampHtml(){
+  return S.images.stamp ? `<div class="stamp-spot"><img src="${S.images.stamp.dataUrl}" alt="직인"></div>` : '';
+}
+function attachPages(){
+  const pg=(t,img)=>`<div class="a4 attach-page"><h3>붙임 — ${t}</h3>${
+    img?`<img src="${img.dataUrl}" alt="${t}">`:`<div class="attach-missing">${t} 이미지가 등록되지 않았습니다.<br>설정 화면에서 업로드하면 이 페이지에 자동 삽입됩니다.</div>`}</div>`;
+  return pg('사업자등록증', S.images.bizCert) + pg('통장사본', S.images.bankCopy);
+}
+function supplierBox(){
+  const s=S.supplier;
+  return `<div class="sup">${stampHtml()}<table>
+    <tr><td class="k">사업자번호</td><td colspan="3">${esc(s.bizNo)||'—'}</td></tr>
+    <tr><td class="k">상호</td><td>${esc(s.name)||'—'}</td><td class="k">대표</td><td style="padding-right:56px">${esc(s.ceo)||'—'}</td></tr>
+    <tr><td class="k">소재지</td><td colspan="3">${esc(s.addr)||'—'}</td></tr>
+    <tr><td class="k">업태/종목</td><td colspan="3">${esc(s.bizType)||'—'} / ${esc(s.bizItem)||'—'}</td></tr>
+    <tr><td class="k">연락처</td><td>${esc(s.phone)||'—'}</td><td class="k">담당</td><td>${esc(s.manager)||'—'}</td></tr>
+  </table></div>`;
+}
+function itemRowsHtml(gian){
+  const rows = Q.items.map((it,i)=>{
+    const amt=itemAmount(it);
+    const main = gian
+      ? `<tr><td class="cen">${i+1}</td><td>${esc(it.name)}</td><td class="cen">${it.qty1===1?fmt(it.qty2):it.qty2===1?fmt(it.qty1):fmt(it.qty1)+'×'+fmt(it.qty2)}</td><td class="num">${fmt(it.unitPrice)}</td><td class="num">${fmt(amt)}</td><td class="cen">${esc(it.note)}</td></tr>`
+      : `<tr><td colspan="2">${esc(it.name)}</td><td class="cen">${esc(it.spec)}</td><td class="cen">${fmt(it.qty1)}</td><td class="cen">${fmt(it.qty2)}</td><td class="num">${fmt(it.unitPrice)}</td><td class="num">${fmt(amt)}</td><td class="cen">${esc(it.note)}</td></tr>`;
+    const det = (it.detail||'').split('\n').map(s=>s.trim()).filter(Boolean)
+      .map(l=>`<tr><td class="detail" colspan="${gian?6:8}">└ ${esc(l)}</td></tr>`).join('');
+    return main+det;
+  }).join('');
+  const blank = `<tr><td class="cen" colspan="${gian?6:8}" style="color:#888">이 하 여 백</td></tr>`;
+  return rows + blank;
+}
+function renderPreview(){
+  const c=calc(), el=document.getElementById('preview');
+  const head = currentForm==='enk' ? enkPage(c) : gianPage(c);
+  el.innerHTML = head + attachPages();
+}
+function enkPage(c){
+  return `<div class="a4">
+    <div class="q-title">견 적 서</div>
+    <div class="q-no">견적번호 : ${esc(Q.quoteNo)}${Q.revision?'-R'+Q.revision:''}</div>
+    <div class="q-head">
+      <div class="q-left">
+        <p>견적일자 : ${fmtDate(Q.quoteDate)}</p>
+        <p><span class="to">${esc(Q.school)||'수신처'} 貴中</span></p>
+        <p style="margin-top:10px">제 목 : ${esc(Q.title)||'—'}</p>
+        ${Q.eduDate?`<p>교육일 : ${fmtDate(Q.eduDate)}</p>`:''}
+        <p class="q-intro">아래와 같이 견적합니다.</p>
+      </div>
+      ${supplierBox()}
+    </div>
+    <div class="q-total-line"><span>합계금액 : 일금 ${numToHangul(c.total)}整</span><span>(₩ ${fmt(c.total)}) ${c.vatLabel}</span></div>
+    <table class="q-items">
+      <tr><th colspan="2" style="width:34%">품 명</th><th>규 격</th><th style="width:7%">수량</th><th style="width:8%">수량</th><th style="width:12%">단 가</th><th style="width:15%">공급가액</th><th style="width:9%">비고</th></tr>
+      ${itemRowsHtml(false)}
+      <tr><td colspan="2" class="cen" style="font-weight:700">소 계</td><td colspan="4"></td><td class="num">${fmt(c.sub)}</td><td class="cen" style="font-size:10px">${c.cutLabel}</td></tr>
+      <tr><td colspan="2" class="cen" style="font-weight:700; background:#eef1f4">총 계</td><td colspan="4" class="cen">${c.vat?`부가세 ${fmt(c.vat)}원 별도 가산`:''}</td><td class="num" style="font-weight:800; background:#eef1f4">${fmt(c.total)}</td><td class="cen" style="font-size:10px">${c.vatLabel.replace(/[()]/g,'')}</td></tr>
+    </table>
+    <div class="q-terms"><b>※ 특이사항</b><ul>${termsList().map(t=>`<li>${esc(t)}</li>`).join('')}</ul>
+      ${S.supplier.account?`<p style="margin-top:6px">입금계좌 : ${esc(S.supplier.account)}</p>`:''}</div>
+    <div class="q-attach">붙임 : 사업자등록증 1부, 통장사본 1부.  끝.</div>
+  </div>`;
+}
+function gianPage(c){
+  return `<div class="a4">
+    <div class="q-title">견 적 서</div>
+    <div class="q-no">견적번호 : ${esc(Q.quoteNo)}${Q.revision?'-R'+Q.revision:''}</div>
+    <div style="font-size:13px; margin-bottom:12px; line-height:2">
+      ${Q.eduDate?`<p>교 육 일 : ${fmtDate(Q.eduDate)}</p>`:''}
+      <p>견 적 일 : ${fmtDate(Q.quoteDate)}</p>
+      <p>수&nbsp;&nbsp;&nbsp;&nbsp;신 : <b style="font-size:15px">${esc(Q.school)||'—'} 귀하</b>${Q.dept?` (${esc(Q.dept)})`:''}</p>
+      <p>제&nbsp;&nbsp;&nbsp;&nbsp;목 : ${esc(Q.title)||'—'}</p>
+    </div>
+    <div class="q-head" style="margin-bottom:10px"><div class="q-left"><p class="q-intro">아래와 같이 견적합니다.</p></div>${supplierBox()}</div>
+    <table class="q-items">
+      <tr><th style="width:7%">순번</th><th style="width:33%">품 명</th><th style="width:13%">수 량</th><th style="width:14%">단 가</th><th style="width:18%">금 액</th><th>비 고</th></tr>
+      ${itemRowsHtml(true)}
+      <tr><td colspan="4" class="cen" style="font-weight:700">소 계</td><td class="num">${fmt(c.sub)}</td><td class="cen" style="font-size:10px">${c.cutLabel}</td></tr>
+      <tr><td colspan="4" class="cen" style="font-weight:700; background:#eef1f4">합 계</td><td class="num" style="font-weight:800; background:#eef1f4">${fmt(c.total)}</td><td class="cen" style="font-size:10px">${c.vatLabel.replace(/[()]/g,'')}</td></tr>
+    </table>
+    <p style="text-align:center; font-size:15px; font-weight:700; margin-top:16px; letter-spacing:.05em">일금 : ${numToHangul(c.total)}整 (₩ ${fmt(c.total)}) ${c.vatLabel}</p>
+    <div class="q-terms"><b>※ 특이사항</b><ul>${termsList().map(t=>`<li>${esc(t)}</li>`).join('')}</ul></div>
+    <div class="q-attach">붙임 : 사업자등록증 1부, 통장사본 1부.  끝.</div>
+  </div>`;
+}
+
+/* ═══════════ 출력 ═══════════ */
+function attachGuard(){
+  const miss=[];
+  if(!S.images.bizCert) miss.push('사업자등록증');
+  if(!S.images.bankCopy) miss.push('통장사본');
+  if(!S.images.stamp) miss.push('직인');
+  if(miss.length) return confirm(`다음 이미지가 등록되지 않았습니다:\n· ${miss.join('\n· ')}\n\n첨부 없이 출력할까요? (취소 후 설정에서 업로드 가능)`);
+  return true;
+}
+function outName(ext){ return `견적서_${(Q.school||'미지정').replace(/\s+/g,'')}_${Q.quoteDate}${Q.revision?'_R'+Q.revision:''}.${ext}`; }
+function exportPdf(){
+  readForm();
+  if(!attachGuard()) return;
+  renderPreview();
+  toast('인쇄 대화상자에서 "PDF로 저장"을 선택하세요');
+  setTimeout(()=>window.print(), 350);
+}
+
+/* ── 엑셀(.xlsx) — 주력 출력 ── */
+const B_THIN={style:'thin'}, B_MED={style:'medium'};
+const bAll={top:B_THIN,left:B_THIN,bottom:B_THIN,right:B_THIN};
+const bBox={top:B_MED,left:B_MED,bottom:B_MED,right:B_MED};
+function cell(ws,addr,val,opt={}){
+  const c=ws.getCell(addr); c.value=val;
+  c.font=Object.assign({name:'맑은 고딕',size:10},opt.font||{});
+  c.alignment=Object.assign({vertical:'middle',wrapText:true},opt.align||{});
+  if(opt.border) c.border=opt.border;
+  if(opt.fill) c.fill={type:'pattern',pattern:'solid',fgColor:{argb:opt.fill}};
+  if(opt.numFmt) c.numFmt=opt.numFmt;
+  return c;
+}
+function dataUrlParts(img){ return { base64: img.dataUrl.split(',')[1], extension: img.dataUrl.includes('image/png')?'png':'jpeg' }; }
+function addAttachSheet(wb, title, img){
+  const ws=wb.addWorksheet(title,{pageSetup:{paperSize:9,orientation:'portrait',fitToPage:true}});
+  ws.getColumn(1).width=90;
+  cell(ws,'A1',`붙임 — ${title}`,{font:{size:14,bold:true}});
+  if(img){
+    const id=wb.addImage(dataUrlParts(img));
+    const maxW=620, ratio=Math.min(1, maxW/(img.w||maxW));
+    ws.addImage(id,{tl:{col:0.1,row:2}, ext:{width:(img.w||maxW)*ratio, height:(img.h||800)*ratio}});
+  }else{
+    cell(ws,'A3','이미지가 등록되지 않았습니다. 설정에서 업로드 후 다시 출력하세요.',{font:{color:{argb:'FF9A6A00'}}});
+  }
+}
+function addStamp(wb, ws, colRow){
+  if(!S.images.stamp) return;
+  const id=wb.addImage(dataUrlParts(S.images.stamp));
+  ws.addImage(id,{tl:colRow, ext:{width:52,height:52}});
+}
+async function exportExcel(){
+  readForm();
+  if(!attachGuard()) return;
+  try{
+    const wb=new ExcelJS.Workbook();
+    wb.creator=S.supplier.name||'ENK';
+    if(currentForm==='enk') buildEnkSheet(wb); else buildGianSheet(wb);
+    addAttachSheet(wb,'사업자등록증',S.images.bizCert);
+    addAttachSheet(wb,'통장사본',S.images.bankCopy);
+    const buf=await wb.xlsx.writeBuffer();
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+    a.download=outName('xlsx'); a.click(); URL.revokeObjectURL(a.href);
+    toast('엑셀 파일이 다운로드되었습니다');
+  }catch(e){ console.error(e); alert('엑셀 생성 중 오류가 발생했습니다: '+e.message); }
+}
+function supplierRowsExcel(ws, startRow, colK, colV, colEnd){
+  const s=S.supplier;
+  const rows=[['사업자번호',s.bizNo],['상호/대표',`${s.name}   대표 : ${s.ceo}`],['소재지',s.addr],['업태/종목',`${s.bizType} / ${s.bizItem}`],['연락처/담당',`${s.phone}   ${s.manager}`]];
+  rows.forEach((r,i)=>{
+    const rr=startRow+i;
+    ws.getRow(rr).height=20;
+    cell(ws,colK+rr,r[0],{font:{bold:true,size:9},align:{horizontal:'center',wrapText:false,shrinkToFit:true},border:bAll,fill:'FFF0F2F5'});
+    ws.mergeCells(`${colV}${rr}:${colEnd}${rr}`);
+    cell(ws,colV+rr,r[1]||'',{font:{size:9},border:bAll});
+  });
+  return startRow+rows.length;
+}
+function buildEnkSheet(wb){
+  const c=calc();
+  const ws=wb.addWorksheet('견적서',{pageSetup:{paperSize:9,fitToWidth:1,fitToHeight:0,margins:{left:.5,right:.5,top:.6,bottom:.6,header:.2,footer:.2}}});
+  [6,14,10,7,12,11,13,9].forEach((w,i)=>ws.getColumn(i+1).width=w);
+  ws.mergeCells('A1:H1'); cell(ws,'A1','견   적   서',{font:{size:22,bold:true},align:{horizontal:'center'}}); ws.getRow(1).height=34;
+  ws.mergeCells('A2:H2'); cell(ws,'A2',`견적번호 : ${Q.quoteNo}${Q.revision?'-R'+Q.revision:''}`,{font:{size:9},align:{horizontal:'right'}});
+  cell(ws,'A4',`견적일자 : ${fmtDate(Q.quoteDate)}`,{font:{size:10}}); ws.mergeCells('A4:D4');
+  cell(ws,'A5',`수    신 : ${Q.school} 貴中`,{font:{size:12,bold:true,underline:true}}); ws.mergeCells('A5:D5');
+  cell(ws,'A6',`제    목 : ${Q.title}`,{font:{size:10}}); ws.mergeCells('A6:D6');
+  cell(ws,'A7', Q.eduDate?`교 육 일 : ${fmtDate(Q.eduDate)}`:'',{font:{size:10}}); ws.mergeCells('A7:D7');
+  cell(ws,'A8','아래와 같이 견적합니다.',{font:{size:10}}); ws.mergeCells('A8:D8');
+  supplierRowsExcel(ws,4,'E','F','H');
+  addStamp(wb, ws, {col:7.35, row:3.15});
+  ws.mergeCells('A10:H10');
+  cell(ws,'A10',`합계금액 : 일금 ${numToHangul(c.total)}整   (₩ ${fmt(c.total)}) ${c.vatLabel}`,{font:{size:12,bold:true},align:{horizontal:'center'},border:bBox,fill:'FFFAFAFA'});
+  ws.getRow(10).height=26;
+  let r=12;
+  const th=['품 명','','규 격','수량','수량','단 가','공급가액','비고'];
+  th.forEach((t,i)=>cell(ws,String.fromCharCode(65+i)+r,t,{font:{bold:true,size:10},align:{horizontal:'center'},border:bAll,fill:'FFEEF1F4'}));
+  ws.mergeCells(`A${r}:B${r}`); r++;
+  Q.items.forEach(it=>{
+    ws.mergeCells(`A${r}:B${r}`);
+    cell(ws,'A'+r,it.name,{border:bAll});
+    cell(ws,'C'+r,it.spec,{align:{horizontal:'center'},border:bAll});
+    cell(ws,'D'+r,it.qty1,{align:{horizontal:'center'},border:bAll,numFmt:'#,##0'});
+    cell(ws,'E'+r,it.qty2,{align:{horizontal:'center'},border:bAll,numFmt:'#,##0'});
+    cell(ws,'F'+r,it.unitPrice,{align:{horizontal:'right'},border:bAll,numFmt:'#,##0'});
+    cell(ws,'G'+r,itemAmount(it),{align:{horizontal:'right'},border:bAll,numFmt:'#,##0'});
+    cell(ws,'H'+r,it.note,{align:{horizontal:'center'},border:bAll});
+    r++;
+    (it.detail||'').split('\n').map(s=>s.trim()).filter(Boolean).forEach(l=>{ ws.mergeCells(`A${r}:H${r}`); cell(ws,'A'+r,'└ '+l,{font:{size:8.5,color:{argb:'FF444444'}},border:bAll,fill:'FFFCFCFC'}); r++; });
+  });
+  ws.mergeCells(`A${r}:H${r}`); cell(ws,'A'+r,'이  하  여  백',{font:{size:9,color:{argb:'FF888888'}},align:{horizontal:'center'},border:bAll}); r++;
+  ws.mergeCells(`A${r}:B${r}`); cell(ws,'A'+r,'소 계',{font:{bold:true},align:{horizontal:'center'},border:bAll});
+  ws.mergeCells(`C${r}:F${r}`); cell(ws,'C'+r,'',{border:bAll});
+  cell(ws,'G'+r,c.sub,{align:{horizontal:'right'},border:bAll,numFmt:'#,##0'});
+  cell(ws,'H'+r,c.cutLabel,{font:{size:7.5},align:{horizontal:'center'},border:bAll}); r++;
+  ws.mergeCells(`A${r}:B${r}`); cell(ws,'A'+r,'총 계',{font:{bold:true},align:{horizontal:'center'},border:bAll,fill:'FFEEF1F4'});
+  ws.mergeCells(`C${r}:F${r}`); cell(ws,'C'+r, c.vat?`부가세 ${fmt(c.vat)}원 별도 가산`:'',{font:{size:8.5},align:{horizontal:'center'},border:bAll});
+  cell(ws,'G'+r,c.total,{font:{bold:true},align:{horizontal:'right'},border:bAll,fill:'FFEEF1F4',numFmt:'#,##0'});
+  cell(ws,'H'+r,c.vatLabel.replace(/[()]/g,''),{font:{size:7.5},align:{horizontal:'center'},border:bAll}); r+=2;
+  cell(ws,'A'+r,'※ 특이사항',{font:{bold:true,size:9.5}}); r++;
+  termsList().forEach(t=>{ ws.mergeCells(`A${r}:H${r}`); cell(ws,'A'+r,' · '+t,{font:{size:9}}); r++; });
+  if(S.supplier.account){ ws.mergeCells(`A${r}:H${r}`); cell(ws,'A'+r,' · 입금계좌 : '+S.supplier.account,{font:{size:9}}); r++; }
+  r++;
+  ws.mergeCells(`A${r}:H${r}`); cell(ws,'A'+r,'붙임 : 사업자등록증 1부, 통장사본 1부.  끝.',{font:{size:9}});
+}
+function buildGianSheet(wb){
+  const c=calc();
+  const ws=wb.addWorksheet('견적서',{pageSetup:{paperSize:9,fitToWidth:1,fitToHeight:0,margins:{left:.5,right:.5,top:.6,bottom:.6,header:.2,footer:.2}}});
+  [7,30,11,12,15,11].forEach((w,i)=>ws.getColumn(i+1).width=w);
+  ws.mergeCells('A1:F1'); cell(ws,'A1','견   적   서',{font:{size:22,bold:true},align:{horizontal:'center'}}); ws.getRow(1).height=34;
+  ws.mergeCells('A2:F2'); cell(ws,'A2',`견적번호 : ${Q.quoteNo}${Q.revision?'-R'+Q.revision:''}`,{font:{size:9},align:{horizontal:'right'}});
+  let r=4;
+  if(Q.eduDate){ cell(ws,'A'+r,`교 육 일 : ${fmtDate(Q.eduDate)}`,{font:{size:10}}); ws.mergeCells(`A${r}:C${r}`); r++; }
+  cell(ws,'A'+r,`견 적 일 : ${fmtDate(Q.quoteDate)}`,{font:{size:10}}); ws.mergeCells(`A${r}:C${r}`); r++;
+  cell(ws,'A'+r,`수    신 : ${Q.school} 귀하${Q.dept?' ('+Q.dept+')':''}`,{font:{size:11,bold:true}}); ws.mergeCells(`A${r}:C${r}`); r++;
+  cell(ws,'A'+r,`제    목 : ${Q.title}`,{font:{size:10}}); ws.mergeCells(`A${r}:C${r}`); r++;
+  cell(ws,'A'+r,'아래와 같이 견적합니다.',{font:{size:10}}); ws.mergeCells(`A${r}:C${r}`);
+  const supEnd=supplierRowsExcel(ws,4,'D','E','F');
+  addStamp(wb, ws, {col:5.4, row:3.15});
+  r=Math.max(r+2, supEnd+1);
+  ['순번','품 명','수 량','단 가','금 액','비 고'].forEach((t,i)=>cell(ws,String.fromCharCode(65+i)+r,t,{font:{bold:true,size:10},align:{horizontal:'center'},border:bAll,fill:'FFEEF1F4'})); r++;
+  Q.items.forEach((it,i)=>{
+    cell(ws,'A'+r,i+1,{align:{horizontal:'center'},border:bAll});
+    cell(ws,'B'+r,it.name,{border:bAll});
+    cell(ws,'C'+r, it.qty1===1?it.qty2 : it.qty2===1?it.qty1 : `${it.qty1}×${it.qty2}`,{align:{horizontal:'center'},border:bAll});
+    cell(ws,'D'+r,it.unitPrice,{align:{horizontal:'right'},border:bAll,numFmt:'#,##0'});
+    cell(ws,'E'+r,itemAmount(it),{align:{horizontal:'right'},border:bAll,numFmt:'#,##0'});
+    cell(ws,'F'+r,it.note,{align:{horizontal:'center'},border:bAll}); r++;
+    (it.detail||'').split('\n').map(s=>s.trim()).filter(Boolean).forEach(l=>{ ws.mergeCells(`A${r}:F${r}`); cell(ws,'A'+r,'└ '+l,{font:{size:8.5,color:{argb:'FF444444'}},border:bAll,fill:'FFFCFCFC'}); r++; });
+  });
+  ws.mergeCells(`A${r}:F${r}`); cell(ws,'A'+r,'이  하  여  백',{font:{size:9,color:{argb:'FF888888'}},align:{horizontal:'center'},border:bAll}); r++;
+  ws.mergeCells(`A${r}:D${r}`); cell(ws,'A'+r,'소 계',{font:{bold:true},align:{horizontal:'center'},border:bAll});
+  cell(ws,'E'+r,c.sub,{align:{horizontal:'right'},border:bAll,numFmt:'#,##0'});
+  cell(ws,'F'+r,c.cutLabel,{font:{size:7.5},align:{horizontal:'center'},border:bAll}); r++;
+  ws.mergeCells(`A${r}:D${r}`); cell(ws,'A'+r,'합 계',{font:{bold:true},align:{horizontal:'center'},border:bAll,fill:'FFEEF1F4'});
+  cell(ws,'E'+r,c.total,{font:{bold:true},align:{horizontal:'right'},border:bAll,fill:'FFEEF1F4',numFmt:'#,##0'});
+  cell(ws,'F'+r,c.vatLabel.replace(/[()]/g,''),{font:{size:7.5},align:{horizontal:'center'},border:bAll}); r+=2;
+  ws.mergeCells(`A${r}:F${r}`);
+  cell(ws,'A'+r,`일금 : ${numToHangul(c.total)}整  (₩ ${fmt(c.total)}) ${c.vatLabel}`,{font:{size:12,bold:true},align:{horizontal:'center'},border:bBox}); ws.getRow(r).height=24; r+=2;
+  cell(ws,'A'+r,'※ 특이사항',{font:{bold:true,size:9.5}}); r++;
+  termsList().forEach(t=>{ ws.mergeCells(`A${r}:F${r}`); cell(ws,'A'+r,' · '+t,{font:{size:9}}); r++; });
+  r++;
+  ws.mergeCells(`A${r}:F${r}`); cell(ws,'A'+r,'붙임 : 사업자등록증 1부, 통장사본 1부.  끝.',{font:{size:9}});
+}
+
+/* ═══════════ 이미지 업로드 ═══════════ */
+const SLOTS=[ {k:'bizCert',t:'사업자등록증'}, {k:'bankCopy',t:'통장사본'}, {k:'stamp',t:'직인 (도장)'} ];
+function renderSlots(){
+  document.getElementById('slotArea').innerHTML = SLOTS.map(s=>{
+    const img=S.images[s.k];
+    return `<div class="upload-slot ${img?'filled':''}" id="slot_${s.k}"
+      ondragover="event.preventDefault()" ondrop="dropImg(event,'${s.k}')">
+      <b style="font-size:.88rem">${s.t}</b>
+      ${img?`<img src="${img.dataUrl}" alt="${s.t}"><div class="name">${esc(img.fileName)}</div>`
+           :`<p class="mini" style="margin:10px 0">JPG · PNG · PDF(1쪽) 파일을 끌어다 놓거나 선택하세요</p>`}
+      <div class="slot-btns">
+        <button class="btn sm" onclick="document.getElementById('f_${s.k}').click()">${img?'교체':'파일 선택'}</button>
+        ${s.k==='stamp'&&img?`<button class="btn sm" onclick="removeWhite()">흰 배경 제거</button>`:''}
+        ${img?`<button class="btn sm ghost" onclick="clearImg('${s.k}')">삭제</button>`:''}
+      </div>
+      <input type="file" id="f_${s.k}" hidden accept="image/*,.pdf" onchange="pickImg(this,'${s.k}')">
+    </div>`;
+  }).join('');
+}
+function pickImg(inp,k){ if(inp.files[0]) loadFile(inp.files[0],k); inp.value=''; }
+function dropImg(ev,k){ ev.preventDefault(); const f=ev.dataTransfer.files[0]; if(f) loadFile(f,k); }
+function clearImg(k){ S.images[k]=null; saveSettings(); renderSlots(); refresh(); }
+async function loadFile(file,k){
+  try{
+    let src;
+    if(file.type==='application/pdf'){ src = await pdfFirstPage(file); }
+    else { src = await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
+    const img = await shrink(src, k==='stamp'?400:1600, k==='stamp');
+    S.images[k]=Object.assign(img,{fileName:file.name});
+    saveSettings(); renderSlots(); refresh();
+    toast(`${SLOTS.find(s=>s.k===k).t} 등록 완료`);
+  }catch(e){ console.error(e); alert('파일을 처리할 수 없습니다: '+e.message); }
+}
+function shrink(dataUrl,maxSide,png){
+  return new Promise((res,rej)=>{
+    const im=new Image();
+    im.onload=()=>{
+      const sc=Math.min(1,maxSide/Math.max(im.width,im.height));
+      const cv=document.createElement('canvas'); cv.width=Math.round(im.width*sc); cv.height=Math.round(im.height*sc);
+      cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);
+      res({dataUrl: png?cv.toDataURL('image/png'):cv.toDataURL('image/jpeg',.82), w:cv.width, h:cv.height});
+    };
+    im.onerror=()=>rej(new Error('이미지 로드 실패'));
+    im.src=dataUrl;
+  });
+}
+async function pdfFirstPage(file){
+  if(!window.pdfjsLib){
+    await new Promise((res,rej)=>{ const s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      s.onload=res; s.onerror=()=>rej(new Error('pdf.js 로드 실패 — 인터넷 연결을 확인하세요')); document.head.appendChild(s); });
+    pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+  const buf=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  const page=await pdf.getPage(1);
+  const vp=page.getViewport({scale:2});
+  const cv=document.createElement('canvas'); cv.width=vp.width; cv.height=vp.height;
+  await page.render({canvasContext:cv.getContext('2d'), viewport:vp}).promise;
+  return cv.toDataURL('image/jpeg',.85);
+}
+function removeWhite(){
+  const img=S.images.stamp; if(!img) return;
+  const im=new Image();
+  im.onload=()=>{
+    const cv=document.createElement('canvas'); cv.width=im.width; cv.height=im.height;
+    const cx=cv.getContext('2d'); cx.drawImage(im,0,0);
+    const d=cx.getImageData(0,0,cv.width,cv.height);
+    for(let i=0;i<d.data.length;i+=4){
+      const [r,g,b]=[d.data[i],d.data[i+1],d.data[i+2]];
+      if(r>228&&g>228&&b>228) d.data[i+3]=0;
+    }
+    cx.putImageData(d,0,0);
+    S.images.stamp={dataUrl:cv.toDataURL('image/png'), w:cv.width, h:cv.height, fileName:img.fileName};
+    saveSettings(); renderSlots(); refresh(); toast('흰 배경을 제거했습니다');
+  };
+  im.src=img.dataUrl;
+}
+
+/* ═══════════ 설정 저장/백업 ═══════════ */
+function readSettingsForm(){
+  const s=S.supplier;
+  ['bizNo','ceo','name','addr','bizType','bizItem','phone','email','manager','account'].forEach(k=>s[k]=document.getElementById('s_'+k).value);
+  S.terms=document.getElementById('s_terms').value;
+}
+function writeSettingsForm(){
+  const s=S.supplier;
+  ['bizNo','ceo','name','addr','bizType','bizItem','phone','email','manager','account'].forEach(k=>document.getElementById('s_'+k).value=s[k]??'');
+  document.getElementById('s_terms').value=S.terms??DEFAULT_TERMS;
+}
+function saveSettings(fromBtn){
+  if(fromBtn) readSettingsForm();
+  LS.set('enk_settings',S);
+  if(fromBtn){ toast('설정이 저장되었습니다'); refresh(); }
+}
+function exportSettings(){
+  readSettingsForm(); saveSettings();
+  dl(JSON.stringify(S), 'ENK_설정백업_'+new Date().toISOString().slice(0,10)+'.json');
+  toast('설정 백업 파일을 내려받았습니다 (이미지 포함 — 안전하게 보관하세요)');
+}
+function importSettings(inp){
+  const f=inp.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ try{
+      const d=JSON.parse(r.result);
+      if(!d.supplier||!d.images) throw new Error('설정 백업 파일이 아닙니다');
+      S=d; saveSettings(); writeSettingsForm(); renderSlots(); refresh(); toast('설정을 가져왔습니다');
+    }catch(e){ alert('가져오기 실패: '+e.message); } };
+  r.readAsText(f); inp.value='';
+}
+function dl(text,name){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));
+  a.download=name; a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ═══════════ 이력 ═══════════ */
+function saveQuote(){
+  readForm();
+  if(!Q.school && !Q.title){ toast('수신 학교명 또는 견적명을 입력하세요'); return; }
+  const hist=LS.get('enk_history',[]);
+  const c=calc();
+  const rec={...structuredClone(Q), id:editingId||Date.now(), savedAt:new Date().toISOString(), total:c.total};
+  const idx=hist.findIndex(h=>h.id===rec.id);
+  if(idx>=0) hist[idx]=rec; else { hist.unshift(rec); commitQuoteNo(Q.quoteNo); }
+  editingId=rec.id; Q.id=rec.id;
+  LS.set('enk_history',hist); renderHistory();
+  toast('이력에 저장되었습니다');
+}
+function renderHistory(){
+  const hist=LS.get('enk_history',[]);
+  const box=document.getElementById('histBody');
+  if(!hist.length){ box.innerHTML='<p class="empty">저장된 견적이 없습니다. 견적 작성 후 "이력에 저장"을 눌러주세요.</p>'; return; }
+  box.innerHTML=`<table class="hist"><tr><th>견적번호</th><th>수신</th><th>견적명</th><th>금액</th><th>견적일</th><th style="width:190px"></th></tr>`+
+    hist.map(h=>`<tr>
+      <td>${esc(h.quoteNo)}${h.revision?'-R'+h.revision:''}</td>
+      <td>${esc(h.school)}</td><td>${esc(h.title)}</td>
+      <td style="text-align:right">${won(h.total||0)}</td><td>${h.quoteDate}</td>
+      <td style="text-align:right">
+        <button class="btn sm" onclick="loadQuote(${h.id})">불러오기</button>
+        <button class="btn sm" onclick="reviseQuote(${h.id})">수정 재발행</button>
+        <button class="btn sm ghost" onclick="delQuote(${h.id})">삭제</button>
+      </td></tr>`).join('')+'</table>';
+}
+function findHist(id){ return LS.get('enk_history',[]).find(h=>h.id===id); }
+function loadQuote(id){
+  const h=findHist(id); if(!h) return;
+  Q=structuredClone(h); editingId=h.id;
+  writeForm(); refresh(); switchTab('write'); toast('견적을 불러왔습니다');
+}
+function reviseQuote(id){
+  const h=findHist(id); if(!h) return;
+  Q=structuredClone(h); Q.id=null; editingId=null;
+  Q.revision=(h.revision||0)+1;
+  Q.quoteDate=new Date().toISOString().slice(0,10);
+  writeForm(); refresh(); switchTab('write');
+  toast(`수정본 ${Q.quoteNo}-R${Q.revision} 작성 시작 — 저장 시 새 이력으로 기록됩니다`);
+}
+function delQuote(id){
+  if(!confirm('이 견적 이력을 삭제할까요?')) return;
+  LS.set('enk_history', LS.get('enk_history',[]).filter(h=>h.id!==id));
+  renderHistory();
+}
+function exportHistory(){ dl(JSON.stringify(LS.get('enk_history',[])), 'ENK_견적이력_'+new Date().toISOString().slice(0,10)+'.json'); }
+function importHistory(inp){
+  const f=inp.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ try{
+      const d=JSON.parse(r.result); if(!Array.isArray(d)) throw new Error('견적 이력 파일이 아닙니다');
+      const cur=LS.get('enk_history',[]);
+      d.forEach(h=>{ if(!cur.some(x=>x.id===h.id)) cur.push(h); });
+      cur.sort((a,b)=>b.id-a.id); LS.set('enk_history',cur); renderHistory(); toast('이력을 가져왔습니다');
+    }catch(e){ alert('가져오기 실패: '+e.message); } };
+  r.readAsText(f); inp.value='';
+}
+function resetQuote(){
+  if(!confirm('입력 중인 내용을 지우고 새 견적을 시작할까요?')) return;
+  editingId=null; Q=newQuote(); writeForm(); refresh();
+}
+
+/* ═══════════ 탭 · 초기화 ═══════════ */
+function switchTab(name){
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===name));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.id==='tab-'+name));
+  if(name==='settings'){ writeSettingsForm(); renderSlots(); }
+  if(name==='history') renderHistory();
+}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+
+['title','quoteDate','eduDate','school','dept','validDays','terms'].forEach(id=>document.getElementById(id).addEventListener('input',()=>refresh()));
+['rounding','vatMode'].forEach(id=>document.getElementById(id).addEventListener('change',()=>refresh()));
+['classCount','studentTotal','sessions'].forEach(id=>document.getElementById(id).addEventListener('input',onCommonChange));
+
+(function init(){
+  const draft=LS.get('enk_draft',null);
+  if(draft && (draft.items?.length || draft.school || draft.title)) Q=Object.assign(newQuote(),draft);
+  writeForm(); writeSettingsForm(); renderSlots(); refresh();
+})();
+</script>
+</body>
+</html>
