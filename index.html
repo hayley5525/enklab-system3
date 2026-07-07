@@ -208,7 +208,10 @@ table.pl td.k{background:#f4f6f8; text-align:center; font-weight:700; white-spac
           <div class="field"><label>견적일</label><input type="date" id="quoteDate"></div>
         </div>
         <div class="field"><label>견적명</label><input id="title" placeholder="예: AI 융합 진로 캠프"></div>
-        <div class="field"><label>교육일</label><input type="date" id="eduDate"></div>
+        <div class="field"><label>교육일 (여러 날짜 추가 가능)</label>
+          <div id="eduList"></div>
+          <button class="btn sm" onclick="addEduDate()" style="margin-top:4px">+ 교육일 추가</button>
+        </div>
         <div class="grid2">
           <div class="field"><label>수신 (학교명)</label><input id="school" placeholder="예: 경산장산중학교"></div>
           <div class="field"><label>담당 부서</label><input id="dept" placeholder="예: 진로진학담당부서"></div>
@@ -422,7 +425,7 @@ let editingId = null;   // 이력에서 불러온 견적 id
 function newQuote(){
   const today = new Date().toISOString().slice(0,10);
   return { id:null, quoteNo: nextQuoteNo(), revision:0,
-    title:'', subtitle:'', quoteDate:today, eduDate:'', school:'', dept:'',
+    title:'', subtitle:'', quoteDate:today, eduDates:[], school:'', dept:'',
     validDays:10, classCount:1, studentTotal:0, sessions:4,
     items:[], rounding:'tenthousand', vatMode:'included',
     terms: S.terms };
@@ -433,6 +436,27 @@ function nextQuoteNo(){
   const n = (c.year===y ? c.n : 0) + 1;
   return `ENK-${y}-${String(n).padStart(3,'0')}`;
 }
+function normalizeQuote(q){
+  if(!Array.isArray(q.eduDates)) q.eduDates = q.eduDate ? [q.eduDate] : [];
+  delete q.eduDate;
+  return q;
+}
+function eduStr(){
+  const ds=(Q.eduDates||[]).filter(Boolean);
+  return ds.map(fmtDate).join(', ');
+}
+function renderEduDates(){
+  const box=document.getElementById('eduList'); if(!box) return;
+  const ds=Q.eduDates||[];
+  box.innerHTML = ds.length
+    ? ds.map((d,i)=>`<div style="display:flex; gap:6px; margin-bottom:5px">
+        <input type="date" value="${d}" onchange="updEduDate(${i},this.value)">
+        <button class="btn ghost sm" onclick="delEduDate(${i})">삭제</button></div>`).join('')
+    : '<p class="mini" style="margin:4px 0">등록된 교육일이 없습니다.</p>';
+}
+function addEduDate(){ readForm(); (Q.eduDates=Q.eduDates||[]).push(''); renderEduDates(); }
+function updEduDate(i,v){ Q.eduDates[i]=v; refresh(); }
+function delEduDate(i){ Q.eduDates.splice(i,1); renderEduDates(); refresh(); }
 function commitQuoteNo(no){
   const m = no.match(/^ENK-(\d{4})-(\d{3})/); if(!m) return;
   const y=+m[1], n=+m[2], c=LS.get('enk_counter',{year:y,n:0});
@@ -584,14 +608,15 @@ function delSeg(i,si){ Q.items[i].segs.splice(si,1); renderItems(); }
 function updSeg(i,si,k,v){ Q.items[i].segs[si][k]=v; }
 
 function readForm(){
-  ['title','quoteDate','eduDate','school','dept','terms'].forEach(k=>Q[k]=document.getElementById(k).value);
+  ['title','quoteDate','school','dept','terms'].forEach(k=>Q[k]=document.getElementById(k).value);
   ['validDays','classCount','studentTotal','sessions'].forEach(k=>Q[k]=+document.getElementById(k).value||0);
   Q.rounding=document.getElementById('rounding').value;
   Q.vatMode=document.getElementById('vatMode').value;
 }
 function writeForm(){
   document.getElementById('quoteNo').value = Q.quoteNo + (Q.revision?`-R${Q.revision}`:'');
-  ['title','quoteDate','eduDate','school','dept','terms'].forEach(k=>document.getElementById(k).value=Q[k]??'');
+  ['title','quoteDate','school','dept','terms'].forEach(k=>document.getElementById(k).value=Q[k]??'');
+  renderEduDates();
   ['validDays','classCount','studentTotal','sessions'].forEach(k=>document.getElementById(k).value=Q[k]??0);
   document.getElementById('rounding').value=Q.rounding;
   document.getElementById('vatMode').value=Q.vatMode;
@@ -689,7 +714,7 @@ function enkPage(c){
         <p>견적일자 : ${fmtDate(Q.quoteDate)}</p>
         <p><span class="to">${esc(Q.school)||'수신처'} 貴中</span></p>
         <p style="margin-top:10px">제 목 : ${esc(Q.title)||'—'}</p>
-        ${Q.eduDate?`<p>교육일 : ${fmtDate(Q.eduDate)}</p>`:''}
+        ${eduStr()?`<p>교육일 : ${eduStr()}</p>`:''}
         <p class="q-intro">아래와 같이 견적합니다.</p>
       </div>
       ${supplierBox()}
@@ -711,7 +736,7 @@ function gianPage(c){
     <div class="q-title">견 적 서</div>
     <div class="q-no">견적번호 : ${esc(Q.quoteNo)}${Q.revision?'-R'+Q.revision:''}</div>
     <div style="font-size:13px; margin-bottom:12px; line-height:2">
-      ${Q.eduDate?`<p>교 육 일 : ${fmtDate(Q.eduDate)}</p>`:''}
+      ${eduStr()?`<p>교 육 일 : ${eduStr()}</p>`:''}
       <p>견 적 일 : ${fmtDate(Q.quoteDate)}</p>
       <p>수&nbsp;&nbsp;&nbsp;&nbsp;신 : <b style="font-size:15px">${esc(Q.school)||'—'} 귀하</b>${Q.dept?` (${esc(Q.dept)})`:''}</p>
       <p>제&nbsp;&nbsp;&nbsp;&nbsp;목 : ${esc(Q.title)||'—'}</p>
@@ -835,7 +860,7 @@ function buildEnkSheet(wb){
   cell(ws,'A4',`견적일자 : ${fmtDate(Q.quoteDate)}`,{font:{size:10}}); ws.mergeCells('A4:D4');
   cell(ws,'A5',`수    신 : ${Q.school} 貴中`,{font:{size:12,bold:true,underline:true}}); ws.mergeCells('A5:D5');
   cell(ws,'A6',`제    목 : ${Q.title}`,{font:{size:10}}); ws.mergeCells('A6:D6');
-  cell(ws,'A7', Q.eduDate?`교 육 일 : ${fmtDate(Q.eduDate)}`:'',{font:{size:10}}); ws.mergeCells('A7:D7');
+  cell(ws,'A7', eduStr()?`교 육 일 : ${eduStr()}`:'',{font:{size:10},align:{wrapText:false,shrinkToFit:true}}); ws.mergeCells('A7:D7');
   cell(ws,'A8','아래와 같이 견적합니다.',{font:{size:10}}); ws.mergeCells('A8:D8');
   supplierRowsExcel(ws,4,'E','F','H');
   outline(ws,4,5,8,8);   // 공급자 박스 (E4:H8)
@@ -893,7 +918,7 @@ function buildGianSheet(wb){
   ws.mergeCells('A1:F1'); cell(ws,'A1','견   적   서',{font:{size:22,bold:true},align:{horizontal:'center'}}); ws.getRow(1).height=34;
   ws.mergeCells('A2:F2'); cell(ws,'A2',`견적번호 : ${Q.quoteNo}${Q.revision?'-R'+Q.revision:''}`,{font:{size:9},align:{horizontal:'right'}});
   let r=4;
-  if(Q.eduDate){ cell(ws,'A'+r,`교 육 일 : ${fmtDate(Q.eduDate)}`,{font:{size:10}}); ws.mergeCells(`A${r}:C${r}`); r++; }
+  if(eduStr()){ cell(ws,'A'+r,`교 육 일 : ${eduStr()}`,{font:{size:10},align:{wrapText:false,shrinkToFit:true}}); ws.mergeCells(`A${r}:C${r}`); r++; }
   cell(ws,'A'+r,`견 적 일 : ${fmtDate(Q.quoteDate)}`,{font:{size:10}}); ws.mergeCells(`A${r}:C${r}`); r++;
   cell(ws,'A'+r,`수    신 : ${Q.school} 귀하${Q.dept?' ('+Q.dept+')':''}`,{font:{size:11,bold:true}}); ws.mergeCells(`A${r}:C${r}`); r++;
   cell(ws,'A'+r,`제    목 : ${Q.title}`,{font:{size:10}}); ws.mergeCells(`A${r}:C${r}`); r++;
@@ -1088,12 +1113,12 @@ function renderHistory(){
 function findHist(id){ return LS.get('enk_history',[]).find(h=>h.id===id); }
 function loadQuote(id){
   const h=findHist(id); if(!h) return;
-  Q=structuredClone(h); editingId=h.id;
+  Q=normalizeQuote(structuredClone(h)); editingId=h.id;
   writeForm(); refresh(); switchTab('write'); toast('견적을 불러왔습니다');
 }
 function reviseQuote(id){
   const h=findHist(id); if(!h) return;
-  Q=structuredClone(h); Q.id=null; editingId=null;
+  Q=normalizeQuote(structuredClone(h)); Q.id=null; editingId=null;
   Q.revision=(h.revision||0)+1;
   Q.quoteDate=new Date().toISOString().slice(0,10);
   writeForm(); refresh(); switchTab('write');
@@ -1206,8 +1231,9 @@ function pullFromQuote(){
   SUB.org=Q.school||SUB.org;
   SUB.contractName=SUB.contractName||`${y}학년도 ${Q.title||''}`.trim();
   SUB.amount=c.total||SUB.amount;
-  SUB.startDate=Q.eduDate||SUB.startDate;
-  SUB.endDate=Q.eduDate||SUB.endDate;
+  const eds=(Q.eduDates||[]).filter(Boolean).sort();
+  SUB.startDate=eds[0]||SUB.startDate;
+  SUB.endDate=eds[eds.length-1]||SUB.endDate;
   SUB.svcName=SUB.svcName||Q.title||'';
   writeSubmitForm(); renderPledgeEditor(); renderSubmit(); toast('견적서 정보를 가져왔습니다');
 }
@@ -1346,13 +1372,13 @@ function switchTab(name){
 }
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 
-['title','quoteDate','eduDate','school','dept','validDays','terms'].forEach(id=>document.getElementById(id).addEventListener('input',()=>refresh()));
+['title','quoteDate','school','dept','validDays','terms'].forEach(id=>document.getElementById(id).addEventListener('input',()=>refresh()));
 ['rounding','vatMode'].forEach(id=>document.getElementById(id).addEventListener('change',()=>refresh()));
 ['classCount','studentTotal','sessions'].forEach(id=>document.getElementById(id).addEventListener('input',onCommonChange));
 
 (function init(){
   const draft=LS.get('enk_draft',null);
-  if(draft && (draft.items?.length || draft.school || draft.title)) Q=Object.assign(newQuote(),draft);
+  if(draft && (draft.items?.length || draft.school || draft.title)) Q=normalizeQuote(Object.assign(newQuote(),draft));
   editingId = Q.id || null;   // 불러온 견적은 리로드 후에도 같은 이력으로 갱신
   writeForm(); writeSettingsForm(); renderSlots(); refresh();
 })();
