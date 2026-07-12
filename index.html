@@ -169,6 +169,66 @@ table.pl td.k{background:#f4f6f8; text-align:center; font-weight:700; white-spac
 .cell-stamp{position:relative; min-height:42px; display:flex; align-items:center; justify-content:center;}
 .cell-stamp img{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:36px; height:36px; mix-blend-mode:multiply;}
 
+
+/* ══════════ 내부문서 (사고보고서 등) ══════════ */
+.chkgrid{display:grid; grid-template-columns:1fr 1fr; gap:6px;}
+.chkgrid.c1{grid-template-columns:1fr;}
+.chkrow{display:flex; align-items:center; gap:7px; border:1px solid var(--line); border-radius:6px; padding:5px 8px; background:#fff;}
+.chkrow.on{border-color:var(--navy); background:#eef3f8;}
+.chkrow input[type=checkbox],.chkrow input[type=radio]{width:15px; height:15px; flex:none; accent-color:var(--navy); cursor:pointer;}
+.chkrow span.nm{font-size:.84rem; font-weight:600; white-space:nowrap; cursor:pointer;}
+.chkrow input[type=text]{font-size:.8rem; padding:3px 7px; border-color:var(--line-soft);}
+.chkrow .lv{font-size:.74rem; color:var(--sub); font-weight:400;}
+.rowline{display:flex; gap:6px; margin-bottom:5px; align-items:center;}
+.rowline input{flex:1;}
+.rowline .no{font-size:.75rem; color:var(--sub); width:16px; flex:none; text-align:right;}
+.tl-row{display:grid; grid-template-columns:120px 1fr 40px; gap:6px; margin-bottom:5px;}
+.doc-type-bar{display:flex; gap:10px; align-items:center; margin-bottom:12px;}
+.doc-type-bar select{max-width:280px;}
+.dh-row{display:flex; align-items:center; gap:8px; border:1px solid var(--line); border-radius:8px; padding:9px 11px; margin-bottom:7px; background:#fbfcfd;}
+.dh-row .t{flex:1; font-size:.85rem;}
+.dh-row .t b{display:block;}
+.dh-row .t span{color:var(--sub); font-size:.78rem;}
+
+/* 문서 미리보기 */
+.a4.ir{font-family:"Pretendard Variable",Pretendard,"Malgun Gothic",sans-serif; color:#202a38; padding:40px 42px;}
+.ir-top{display:flex; gap:12px; align-items:center; margin-bottom:9px;}
+.ir-logo{width:126px; height:52px; border:1px solid #cbd1da; display:flex; align-items:center; justify-content:center; color:#a7afbd; font-size:9px; letter-spacing:.3em; flex:none; overflow:hidden; background:#fff;}
+.ir-logo img{max-width:100%; max-height:100%; object-fit:contain;}
+.ir-tit{flex:1; text-align:center;}
+.ir-tit b{display:block; font-size:21px; font-weight:800; color:#1b2e4a;}
+.ir-tit i{display:block; font-style:normal; font-size:9.5px; color:#5a5a5a; margin-top:1px;}
+.ir-tit em{display:block; font-style:normal; font-size:18px; font-weight:800; color:#1b2e4a; letter-spacing:.3em; text-indent:.3em; border-top:2px solid #1b2e4a; margin-top:5px; padding-top:5px;}
+table.ir-appr{border-collapse:collapse; font-size:9.5px; width:168px; flex:none;}
+table.ir-appr td{border:.8px solid #cbd1da; text-align:center;}
+table.ir-appr td.h{background:#edf0f5; color:#2c4a6e; font-weight:700; padding:3px 0;}
+table.ir-appr td.b{height:38px;}
+.ir-sec{margin-bottom:6px; break-inside:avoid; page-break-inside:avoid;}
+.ir-h{background:#1b2e4a; color:#fff; font-size:10.5px; font-weight:700; padding:5px 9px; letter-spacing:.02em;}
+.ir-h i{font-style:normal; font-weight:400; font-size:9px; color:#c7d2e4; margin-left:8px;}
+table.ir{width:100%; border-collapse:collapse; font-size:10.5px; table-layout:fixed;}
+table.ir td{border:.8px solid #cbd1da; padding:5px 7px; vertical-align:middle; word-break:break-all;}
+table.ir td.k{background:#edf0f5; color:#2c4a6e; font-weight:700; text-align:left;}
+table.ir td.c{text-align:center;}
+table.ir td.soft{background:#f4f6fa;}
+table.ir td.lv{font-size:9px; color:#5a5a5a; line-height:1.55;}
+table.ir td.lv b{color:#2c4a6e;}
+.ir-write{border:.8px solid #cbd1da; border-top:none; padding:4px 8px;}
+.ir-line{min-height:18px; border-bottom:.7px solid #dde2e8; padding:2px 1px; font-size:10.5px; line-height:1.5;}
+.ir-line:last-child{border-bottom:none;}
+.ck{display:inline-block; width:10px; height:10px; border:1px solid #6b7684; margin-right:5px; vertical-align:-1px; line-height:9px; text-align:center; font-size:8px; color:transparent; background:#fff;}
+.ck.on{background:#1b2e4a; border-color:#1b2e4a; color:#fff;}
+.ir-memo{color:#333; font-size:10px;}
+.ir-memo u{text-decoration:none; border-bottom:.7px solid #b9c0cc; padding:0 2px; min-width:52px; display:inline-block;}
+.ir-princ{border:2px solid #1b2e4a; background:#f4f6fa; padding:8px 12px; font-size:9.5px; line-height:1.65; margin-top:8px; break-inside:avoid; page-break-inside:avoid;}
+.ir-princ b.t{display:block; font-size:11px; color:#1b2e4a; margin-bottom:3px;}
+.ir-princ b.v{color:#1b2e4a;}
+table.ir-sign{width:330px; margin-left:auto; margin-top:8px; border-collapse:collapse; font-size:9.5px; break-inside:avoid; page-break-inside:avoid;}
+table.ir-sign td{border:.8px solid #cbd1da; text-align:center; padding:4px;}
+table.ir-sign td.h{background:#edf0f5; color:#2c4a6e; font-weight:700;}
+table.ir-sign td.b{height:44px; position:relative; color:#b0b7c2;}
+table.ir-sign td.b img{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:34px; height:34px; mix-blend-mode:multiply;}
+
 /* ── 인쇄(PDF) ── */
 @media print{
   body{background:#fff;}
@@ -181,6 +241,8 @@ table.pl td.k{background:#f4f6f8; text-align:center; font-weight:700; white-spac
   .doc-scroll{max-height:none; overflow:visible; padding:0;}
   .a4{width:auto; min-height:auto; box-shadow:none; margin:0; padding:14mm 12mm; page-break-after:always;}
   .a4:last-child{page-break-after:auto;}
+  .a4.ir{padding:12mm 11mm; page-break-after:auto;}
+  .a4.ir, .a4.ir *{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
 }
 @page{size:A4; margin:0;}
 </style>
@@ -193,6 +255,7 @@ table.pl td.k{background:#f4f6f8; text-align:center; font-weight:700; white-spac
       <button class="on" data-tab="write">견적 작성</button>
       <button data-tab="history">견적 이력</button>
       <button data-tab="submit">기관제출용</button>
+      <button data-tab="doc">내부문서</button>
       <button data-tab="settings">설정</button>
     </nav>
   </div>
@@ -368,6 +431,155 @@ table.pl td.k{background:#f4f6f8; text-align:center; font-weight:700; white-spac
         <button class="btn seal" onclick="printSubmit()">인쇄 / PDF 저장</button>
       </div>
       <div class="doc-scroll" id="subPreview"></div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═════════ 내부문서 ═════════ -->
+<section class="tab" id="tab-doc">
+  <div class="compose">
+    <div><!-- 좌: 입력 -->
+
+      <div class="card">
+        <h2>문서 종류 <span class="mini" style="font-weight:400">— ENK 내부문서 양식</span></h2>
+        <div class="doc-type-bar">
+          <select id="d_type" onchange="changeDocType(this.value)"></select>
+          <button class="btn" onclick="newDoc()">새 문서</button>
+          <span class="mini" id="docEditNote"></span>
+        </div>
+        <div class="grid3">
+          <div class="field"><label>문서번호 (자동)</label><input id="d_docNo" readonly style="background:#f2f5f8"></div>
+          <div class="field"><label>작성일</label><input type="date" id="d_writeDate"></div>
+          <div class="field"><label>보안등급</label>
+            <select id="d_sec"><option>일반</option><option>내부</option><option>대표전용</option></select></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>1. 기본정보</h2>
+        <div class="grid2">
+          <div class="field"><label>작성자</label><input id="d_author"></div>
+          <div class="field"><label>소속</label><input id="d_dept"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>프로그램명</label><input id="d_program"></div>
+          <div class="field"><label>출강학교</label><input id="d_school"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>출강일</label><input type="date" id="d_eduDate"></div>
+          <div class="field"><label>출강시간</label><input id="d_eduTime" placeholder="예: 09:40 ~ 12:20"></div>
+        </div>
+        <div class="grid3">
+          <div class="field"><label>학년</label><input id="d_grade"></div>
+          <div class="field"><label>반</label><input id="d_klass"></div>
+          <div class="field"><label>학생수</label><input id="d_students"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>2. 사고 유형 <span class="mini" style="font-weight:400">— 체크 후 ( ) 안에 상세 내역</span></h2>
+        <div class="chkgrid c1" id="ck_type"></div>
+      </div>
+
+      <div class="card">
+        <h2>3. 사고 등급</h2>
+        <div class="chkgrid c1" id="ck_level"></div>
+      </div>
+
+      <div class="card">
+        <h2>4. 사고 발생 시간 · 처리 경과</h2>
+        <div class="grid2">
+          <div class="field"><label>사고 발생</label><input type="time" id="d_t_occur"></div>
+          <div class="field"><label>대표 보고</label><input type="time" id="d_t_report"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>학교 안내</label><input type="time" id="d_t_school"></div>
+          <div class="field"><label>조치 완료</label><input type="time" id="d_t_done"></div>
+        </div>
+        <div class="items-head" style="margin-top:6px">
+          <label style="margin:0">발생 후 처리 진행 상황</label>
+          <button class="btn sm" onclick="addLog()">＋ 줄 추가</button>
+        </div>
+        <div id="logList"></div>
+      </div>
+
+      <div class="card">
+        <div class="items-head">
+          <h2 style="margin:0">5. 사고 경위 <span class="mini" style="font-weight:400">— 사실 위주</span></h2>
+          <button class="btn sm" onclick="addStory()">＋ 줄 추가</button>
+        </div>
+        <div id="storyList"></div>
+      </div>
+
+      <div class="card">
+        <h2>6. 원인 분석</h2>
+        <div class="chkgrid" id="ck_cause"></div>
+        <div class="field" style="margin-top:10px"><label>근본 원인 (Root Cause)</label>
+          <textarea id="d_rootCause" rows="2"></textarea></div>
+      </div>
+
+      <div class="card">
+        <h2>7. 긴급 조치 내용 <span class="mini" style="font-weight:400">— 실제 대응한 내용</span></h2>
+        <textarea id="d_urgent" rows="3"></textarea>
+      </div>
+
+      <div class="card">
+        <h2>8. 학교 영향</h2>
+        <div class="chkgrid" id="ck_impact"></div>
+      </div>
+
+      <div class="card">
+        <h2>9. 재발 방지 계획 <span class="mini" style="font-weight:400">— 가장 중요한 영역</span></h2>
+        <div class="chkgrid" id="ck_prevent"></div>
+        <div class="field" style="margin-top:10px"><label>구체적인 실행 계획</label>
+          <textarea id="d_preventPlan" rows="4" placeholder="언제 · 무엇을 · 어떻게 실행할지 구체적으로 작성"></textarea></div>
+      </div>
+
+      <div class="card">
+        <h2>10. 대표 검토 <span class="mini" style="font-weight:400">— 조치 내용</span></h2>
+        <textarea id="d_ceoAction" rows="3"></textarea>
+      </div>
+
+      <div class="card">
+        <h2>11. 최종 조치</h2>
+        <div class="chkgrid" id="ck_final"></div>
+      </div>
+
+      <div class="card">
+        <h2>서명 · 확인</h2>
+        <div class="chkrow" style="margin-bottom:10px">
+          <input type="checkbox" id="d_useStamp">
+          <span class="nm" onclick="document.getElementById('d_useStamp').click()">대표 확인란에 직인 삽입</span>
+          <span class="mini" style="margin-left:auto">설정 &gt; 직인 이미지 사용</span>
+        </div>
+        <div class="field"><label>확인일</label><input type="date" id="d_confirmDate"></div>
+        <div style="display:flex; gap:8px; margin-top:6px">
+          <button class="btn pri" onclick="saveDoc()">문서 저장</button>
+          <button class="btn" onclick="newDoc()">새 문서</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="items-head">
+          <h2 style="margin:0">저장된 내부문서</h2>
+          <div style="display:flex; gap:6px">
+            <button class="btn sm" onclick="exportDocs()">JSON 내보내기</button>
+            <button class="btn sm" onclick="document.getElementById('docFile').click()">JSON 가져오기</button>
+            <input type="file" id="docFile" accept=".json" hidden onchange="importDocs(this)">
+          </div>
+        </div>
+        <div id="docHistBody"></div>
+      </div>
+
+    </div>
+    <div class="doc-wrap"><!-- 우: 미리보기 -->
+      <div class="doc-bar">
+        <span class="mini" id="docPages">A4 · 작성량에 따라 1~2장</span>
+        <div class="spacer"></div>
+        <button class="btn seal" onclick="printDoc()">인쇄 / PDF 저장</button>
+      </div>
+      <div class="doc-scroll" id="docPreview"></div>
     </div>
   </div>
 </section>
@@ -976,7 +1188,7 @@ function buildGianSheet(wb){
 }
 
 /* ═══════════ 이미지 업로드 ═══════════ */
-const SLOTS=[ {k:'bizCert',t:'사업자등록증'}, {k:'bankCopy',t:'통장사본'}, {k:'stamp',t:'직인 (도장)'} ];
+const SLOTS=[ {k:'bizCert',t:'사업자등록증'}, {k:'bankCopy',t:'통장사본'}, {k:'stamp',t:'직인 (도장)'}, {k:'logo',t:'로고 (내부문서 상단)'} ];
 function renderSlots(){
   document.getElementById('slotArea').innerHTML = SLOTS.map(s=>{
     const img=S.images[s.k];
@@ -1429,6 +1641,443 @@ SUB_KEYS.concat(SUB_NUMS).forEach(k=>{
   if(el) el.addEventListener(el.tagName==='SELECT'?'change':'input',()=>renderSubmit());
 });
 
+
+/* ═══════════════════════════════════════════════════════
+   내부문서 모듈 (확장형)
+   새 양식 추가 = DOC_TYPES 에 정의 하나 추가
+   ═══════════════════════════════════════════════════════ */
+const IR = {
+  types:   ['출강 지각','출강 불참','연락 두절','수업 운영 문제','교구 문제','학생 안전','학교 일정 변경','시설 문제'],
+  levels:  [
+    {k:'Level 1', n:'경미', d:'수업 진행에 지장이 없는 경미한 사안'},
+    {k:'Level 2', n:'보통', d:'부분 차질 · 즉시 조치가 필요한 사안'},
+    {k:'Level 3', n:'중대', d:'수업 불가 · 안전 · 대외 신뢰에 영향'}
+  ],
+  causes:  ['시간 관리','준비 부족','일정 착오','건강','교통','외부 요인'],
+  impacts: ['영향 없음','합반','대체강사','수업시간 변경','학교 협의'],
+  prevents:['출강 전날 준비 완료','일정 재확인','알람 다중 설정','출발시간 조정','출발 인증'],
+  finals:  ['구두지도','공식면담','경고','재발방지계획 제출','출강 제한','계약 재검토']
+};
+
+const DOC_TYPES = {
+  incident: {
+    id:'incident', name:'교육출강 사고보고서', prefix:'ENK-QA',
+    formId:'form-incident',
+    make: makeIncident, read: readIncident, write: writeIncident, render: renderIncident,
+    label: d => `${d.school||'학교 미지정'}${d.eduDate?' · '+d.eduDate:''}`
+  }
+  /* ▼ 새 양식은 여기에 추가 (예: absence:{...}) */
+};
+
+let D = null;            // 현재 문서
+let editingDocId = null;
+
+const today = () => new Date().toISOString().slice(0,10);
+const T = v => v || '';
+
+function nextDocNo(prefix){
+  const y = new Date().getFullYear();
+  const c = LS.get('enk_doc_counter', {});
+  const cur = c[prefix];
+  const n = (cur && cur.year===y ? cur.n : 0) + 1;
+  return `${prefix}-${y}-${String(n).padStart(3,'0')}`;
+}
+function commitDocNo(no){
+  const m = String(no||'').match(/^(.+)-(\d{4})-(\d{3})$/); if(!m) return;
+  const pfx=m[1], y=+m[2], n=+m[3];
+  const c = LS.get('enk_doc_counter', {}); const cur=c[pfx];
+  if(!cur || cur.year!==y || n>cur.n) c[pfx] = { year:y, n: Math.max(n, (cur&&cur.year===y)?cur.n:0) };
+  LS.set('enk_doc_counter', c);
+}
+
+/* ── 사고보고서 정의 ── */
+function makeIncident(){
+  const blank = arr => { const o={}; arr.forEach(k=>o[k]={on:false, memo:''}); return o; };
+  return {
+    id:'', type:'incident', docNo:nextDocNo('ENK-QA'), writeDate:today(), sec:'일반',
+    author:'', dept:'', program:'', school:'', eduDate:'', eduTime:'', grade:'', klass:'', students:'',
+    types: blank(IR.types), typeEtc:{on:false, memo:''},
+    level:'',
+    t_occur:'', t_report:'', t_school:'', t_done:'',
+    logs: [{t:'',c:''},{t:'',c:''}],
+    story: ['','',''],
+    causes: blank(IR.causes), causeEtc:{on:false, memo:''}, rootCause:'',
+    urgent:'',
+    impacts: blank(IR.impacts), impactEtc:{on:false, memo:''},
+    prevents: blank(IR.prevents), preventEtc:{on:false, memo:''}, preventPlan:'',
+    ceoAction:'',
+    finals: blank(IR.finals), finalEtc:{on:false, memo:''},
+    useStamp:false, confirmDate:''
+  };
+}
+function normalizeDoc(d){
+  const base = makeIncident();
+  const fix = (grp, arr, key) => {
+    d[key] = d[key] || {};
+    arr.forEach(k => { const v=d[key][k]; d[key][k] = (v && typeof v==='object') ? {on:!!v.on, memo:T(v.memo)} : {on:false, memo:''}; });
+  };
+  fix(1, IR.types,'types'); fix(1, IR.causes,'causes'); fix(1, IR.impacts,'impacts');
+  fix(1, IR.prevents,'prevents'); fix(1, IR.finals,'finals');
+  ['typeEtc','causeEtc','impactEtc','preventEtc','finalEtc'].forEach(k=>{
+    const v=d[k]; d[k] = (v && typeof v==='object') ? {on:!!v.on, memo:T(v.memo)} : {on:false, memo:''};
+  });
+  if(!Array.isArray(d.logs) || !d.logs.length) d.logs=[{t:'',c:''}];
+  if(!Array.isArray(d.story) || !d.story.length) d.story=['',''];
+  return Object.assign(base, d);
+}
+
+/* ── 체크 그룹 렌더 (입력폼) ── */
+function ckRows(boxId, arr, key, etcKey, withMemo){
+  const box = document.getElementById(boxId); if(!box) return;
+  const rows = arr.map(k=>{
+    const it = D[key][k];
+    return `<div class="chkrow ${it.on?'on':''}">
+      <input type="checkbox" ${it.on?'checked':''} onchange="ckSet('${key}','${k}',this.checked)">
+      <span class="nm" onclick="this.previousElementSibling.click()">${esc(k)}</span>
+      ${withMemo?`<input type="text" placeholder="상세 내역" value="${esc(it.memo)}" oninput="ckMemo('${key}','${k}',this.value)">`:''}
+    </div>`;
+  });
+  const e = D[etcKey];
+  rows.push(`<div class="chkrow ${e.on?'on':''}">
+    <input type="checkbox" ${e.on?'checked':''} onchange="etcSet('${etcKey}',this.checked)">
+    <span class="nm" onclick="this.previousElementSibling.click()">기타</span>
+    <input type="text" placeholder="기타 내용을 입력하세요" value="${esc(e.memo)}" oninput="etcMemo('${etcKey}',this.value)">
+  </div>`);
+  box.innerHTML = rows.join('');
+}
+function ckSet(key,k,v){ D[key][k].on=v; renderDoc(); paintChecks(); }
+function ckMemo(key,k,v){ D[key][k].memo=v; renderDoc(); }
+function etcSet(key,v){ D[key].on=v; renderDoc(); paintChecks(); }
+function etcMemo(key,v){ D[key].memo=v; renderDoc(); }
+function paintChecks(){
+  document.querySelectorAll('#tab-doc .chkrow').forEach(r=>{
+    const c=r.querySelector('input[type=checkbox],input[type=radio]');
+    if(c) r.classList.toggle('on', c.checked);
+  });
+}
+function renderLevels(){
+  const box=document.getElementById('ck_level'); if(!box) return;
+  box.innerHTML = IR.levels.map(l=>`<div class="chkrow ${D.level===l.k?'on':''}">
+    <input type="radio" name="irlv" ${D.level===l.k?'checked':''} onchange="D.level='${l.k}'; renderDoc(); paintChecks();">
+    <span class="nm" onclick="this.previousElementSibling.click()">${l.k} · ${l.n}</span>
+    <span class="lv">${esc(l.d)}</span>
+  </div>`).join('');
+}
+
+/* ── 5. 사고 경위 (줄 추가) ── */
+function renderStory(){
+  const box=document.getElementById('storyList'); if(!box) return;
+  box.innerHTML = D.story.map((v,i)=>`<div class="rowline">
+    <span class="no">${i+1}</span>
+    <input type="text" value="${esc(v)}" oninput="updStory(${i},this.value)" placeholder="사실 위주로 작성">
+    <button class="btn ghost sm" onclick="delStory(${i})" title="삭제">✕</button>
+  </div>`).join('');
+}
+function addStory(){ D.story.push(''); renderStory(); renderDoc(); }
+function updStory(i,v){ D.story[i]=v; renderDoc(); }
+function delStory(i){ if(D.story.length<=1) return toast('최소 1줄은 필요합니다'); D.story.splice(i,1); renderStory(); renderDoc(); }
+
+/* ── 4. 처리 경과 로그 ── */
+function renderLogs(){
+  const box=document.getElementById('logList'); if(!box) return;
+  box.innerHTML = D.logs.map((l,i)=>`<div class="tl-row">
+    <input type="time" value="${esc(l.t)}" onchange="updLog(${i},'t',this.value)">
+    <input type="text" value="${esc(l.c)}" oninput="updLog(${i},'c',this.value)" placeholder="처리 진행 상황">
+    <button class="btn ghost sm" onclick="delLog(${i})" title="삭제">✕</button>
+  </div>`).join('');
+}
+function addLog(){ D.logs.push({t:'',c:''}); renderLogs(); renderDoc(); }
+function updLog(i,k,v){ D.logs[i][k]=v; renderDoc(); }
+function delLog(i){ if(D.logs.length<=1) return toast('최소 1줄은 필요합니다'); D.logs.splice(i,1); renderLogs(); renderDoc(); }
+
+/* ── 폼 ↔ 데이터 ── */
+const D_KEYS = ['docNo','writeDate','sec','author','dept','program','school','eduDate','eduTime','grade','klass','students',
+                't_occur','t_report','t_school','t_done','rootCause','urgent','preventPlan','ceoAction','confirmDate'];
+function readIncident(){
+  D_KEYS.forEach(k=>{ const el=document.getElementById('d_'+k); if(el) D[k]=el.value; });
+  const st=document.getElementById('d_useStamp'); if(st) D.useStamp=st.checked;
+}
+function writeIncident(){
+  D_KEYS.forEach(k=>{ const el=document.getElementById('d_'+k); if(el) el.value=T(D[k]); });
+  const st=document.getElementById('d_useStamp'); if(st) st.checked=!!D.useStamp;
+  ckRows('ck_type', IR.types,'types','typeEtc', true);
+  renderLevels();
+  ckRows('ck_cause', IR.causes,'causes','causeEtc', false);
+  ckRows('ck_impact', IR.impacts,'impacts','impactEtc', false);
+  ckRows('ck_prevent', IR.prevents,'prevents','preventEtc', false);
+  ckRows('ck_final', IR.finals,'finals','finalEtc', false);
+  renderLogs(); renderStory();
+}
+
+/* ── 미리보기 렌더 ── */
+function ckHtml(on,label){ return `<span class="ck ${on?'on':''}">✓</span>${esc(label)}`; }
+function memoHtml(m){ return `<span class="ir-memo"> ( <u>${esc(m)||'&nbsp;'}</u> )</span>`; }
+function ckCells(arr, key, etcKey, cols){
+  const items = arr.map(k=>`<td>${ckHtml(D[key][k].on, k)}</td>`);
+  const rows=[];
+  for(let i=0;i<items.length;i+=cols){
+    const chunk = items.slice(i,i+cols);
+    while(chunk.length<cols) chunk.push('<td></td>');
+    rows.push('<tr>'+chunk.join('')+'</tr>');
+  }
+  const e=D[etcKey];
+  rows.push(`<tr><td colspan="${cols}">${ckHtml(e.on,'기타')}${memoHtml(e.memo)}</td></tr>`);
+  return rows.join('');
+}
+function linesHtml(arr, min){
+  const a = arr.slice();
+  while(a.length < (min||0)) a.push('');
+  return a.map(v=>`<div class="ir-line">${esc(v)||'&nbsp;'}</div>`).join('');
+}
+function textLines(txt, min){
+  const a = String(txt||'').split('\n');
+  return linesHtml(a, min);
+}
+function renderIncident(){
+  const logo = (S.images&&S.images.logo) ? `<img src="${S.images.logo.dataUrl}" alt="로고">` : 'L O G O';
+  const stamp = (D.useStamp && S.images && S.images.stamp) ? `<img src="${S.images.stamp.dataUrl}" alt="직인">` : '';
+  const secOpt = v => `${ckHtml(D.sec===v, v)}`;
+
+  const typeRows = (()=>{
+    const items = IR.types.map(k=>`<td>${ckHtml(D.types[k].on,k)}${memoHtml(D.types[k].memo)}</td>`);
+    const rows=[];
+    for(let i=0;i<items.length;i+=2) rows.push('<tr>'+items.slice(i,i+2).join('')+'</tr>');
+    const e=D.typeEtc;
+    rows.push(`<tr><td colspan="2">${ckHtml(e.on,'기타')}${memoHtml(e.memo)}</td></tr>`);
+    return rows.join('');
+  })();
+
+  const logRows = D.logs.map(l=>`<tr><td class="c" style="width:70px">${esc(l.t)||'&nbsp;'}</td><td>${esc(l.c)||'&nbsp;'}</td></tr>`).join('');
+
+  return `<div class="a4 ir">
+    <div class="ir-top">
+      <div class="ir-logo">${logo}</div>
+      <div class="ir-tit">
+        <b>ENK LAB</b>
+        <i>학생의 오늘을 경험으로, 내일을 진로로.</i>
+        <em>교육출강 사고보고서</em>
+      </div>
+      <table class="ir-appr">
+        <tr><td class="h">대표</td><td class="h">본부장</td><td class="h">담당자</td></tr>
+        <tr><td class="b"></td><td class="b"></td><td class="b"></td></tr>
+      </table>
+    </div>
+
+    <table class="ir" style="margin-bottom:7px">
+      <colgroup><col style="width:62px"><col style="width:132px"><col style="width:52px"><col style="width:96px"><col style="width:58px"><col></colgroup>
+      <tr>
+        <td class="k">문서번호</td><td>${esc(D.docNo)}</td>
+        <td class="k">작성일</td><td>${esc(D.writeDate)}</td>
+        <td class="k">보안등급</td>
+        <td>${secOpt('일반')} &nbsp; ${secOpt('내부')} &nbsp; ${secOpt('대표전용')}</td>
+      </tr>
+    </table>
+
+    <div class="ir-sec">
+      <div class="ir-h">1. 기본정보</div>
+      <table class="ir">
+        <colgroup><col style="width:70px"><col><col style="width:70px"><col></colgroup>
+        <tr><td class="k">작성자</td><td>${esc(D.author)}</td><td class="k">소속</td><td>${esc(D.dept)}</td></tr>
+        <tr><td class="k">프로그램명</td><td>${esc(D.program)}</td><td class="k">출강학교</td><td>${esc(D.school)}</td></tr>
+        <tr><td class="k">출강일</td><td>${esc(D.eduDate)}</td><td class="k">출강시간</td><td>${esc(D.eduTime)}</td></tr>
+        <tr><td class="k">학년 / 반</td><td>${esc(D.grade)} ${D.klass?'/ '+esc(D.klass):''}</td><td class="k">학생수</td><td>${esc(D.students)}</td></tr>
+      </table>
+    </div>
+
+    <div class="ir-sec">
+      <div class="ir-h">2. 사고 유형 <i>해당 항목 체크 후 ( ) 안에 상세 내역</i></div>
+      <table class="ir"><colgroup><col style="width:50%"><col style="width:50%"></colgroup>${typeRows}</table>
+    </div>
+
+    <div class="ir-sec">
+      <div class="ir-h">3. 사고 등급</div>
+      <table class="ir">
+        <colgroup><col style="width:55%"><col></colgroup>
+        <tr>
+          <td>${IR.levels.map(l=>ckHtml(D.level===l.k, l.k+' '+l.n)).join(' &nbsp; ')}</td>
+          <td class="lv soft">${IR.levels.map(l=>`<b>${l.k}</b> ${esc(l.d)}`).join('<br>')}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="ir-sec">
+      <div class="ir-h">4. 사고 발생 시간 · 처리 경과</div>
+      <table class="ir">
+        <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col></colgroup>
+        <tr><td class="k c">사고 발생</td><td class="k c">대표 보고</td><td class="k c">학교 안내</td><td class="k c">조치 완료</td></tr>
+        <tr><td class="c">${esc(D.t_occur)||'&nbsp;'}</td><td class="c">${esc(D.t_report)||'&nbsp;'}</td><td class="c">${esc(D.t_school)||'&nbsp;'}</td><td class="c">${esc(D.t_done)||'&nbsp;'}</td></tr>
+      </table>
+      <table class="ir" style="border-top:none">
+        <colgroup><col style="width:70px"><col></colgroup>
+        <tr><td class="k c">시각</td><td class="k">발생 후 처리 진행 상황</td></tr>
+        ${logRows}
+      </table>
+    </div>
+
+    <div class="ir-sec">
+      <div class="ir-h">5. 사고 경위 <i>사실 위주로 작성</i></div>
+      <div class="ir-write">${linesHtml(D.story, 3)}</div>
+    </div>
+
+    <div class="ir-sec">
+      <div class="ir-h">6. 원인 분석</div>
+      <table class="ir">
+        <colgroup><col style="width:33.3%"><col style="width:33.3%"><col></colgroup>
+        ${ckCells(IR.causes,'causes','causeEtc',3)}
+        <tr><td class="k" colspan="3">근본 원인 (Root Cause)</td></tr>
+      </table>
+      <div class="ir-write">${textLines(D.rootCause, 2)}</div>
+    </div>
+
+    <div class="ir-sec">
+      <div class="ir-h">7. 긴급 조치 내용 <i>강사가 실제 대응한 내용</i></div>
+      <div class="ir-write">${textLines(D.urgent, 2)}</div>
+    </div>
+
+    <div class="ir-sec">
+      <div class="ir-h">8. 학교 영향</div>
+      <table class="ir">
+        <colgroup><col style="width:33.3%"><col style="width:33.3%"><col></colgroup>
+        ${ckCells(IR.impacts,'impacts','impactEtc',3)}
+      </table>
+    </div>
+
+    <div class="ir-sec">
+      <div class="ir-h">9. 재발 방지 계획 <i>★ 가장 중요한 영역</i></div>
+      <table class="ir">
+        <colgroup><col style="width:33.3%"><col style="width:33.3%"><col></colgroup>
+        <tr><td class="soft" colspan="3" style="color:#2c4a6e; font-weight:700">▶ 구체적인 실행 계획을 작성합니다.</td></tr>
+        ${ckCells(IR.prevents,'prevents','preventEtc',3)}
+        <tr><td class="k" colspan="3">실행 계획</td></tr>
+      </table>
+      <div class="ir-write">${textLines(D.preventPlan, 3)}</div>
+    </div>
+
+    <div class="ir-sec">
+      <div class="ir-h">10. 대표 검토 <i>대표 작성</i></div>
+      <table class="ir"><tr><td class="k" style="width:70px">조치 내용</td><td>&nbsp;</td></tr></table>
+      <div class="ir-write">${textLines(D.ceoAction, 2)}</div>
+    </div>
+
+    <div class="ir-sec">
+      <div class="ir-h">11. 최종 조치</div>
+      <table class="ir">
+        <colgroup><col style="width:33.3%"><col style="width:33.3%"><col></colgroup>
+        ${ckCells(IR.finals,'finals','finalEtc',3)}
+      </table>
+    </div>
+
+    <div class="ir-princ">
+      <b class="t">ENK LAB 교육품질 운영 원칙</b>
+      본 보고서는 강사를 처벌하기 위한 문서가 아니라, 교육품질 향상과 재발방지를 위한 품질관리(QA) 문서입니다.
+      ENK LAB은 실수 자체보다 <b class="v">① 신속한 보고 &nbsp;② 책임 있는 대응 &nbsp;③ 재발 방지를 위한 실천</b> 을 가장 중요한 가치로 생각합니다.
+      모든 강사는 문제 발생 시 사실에 근거하여 즉시 보고하고, 함께 해결하는 것을 원칙으로 합니다.
+    </div>
+
+    <table class="ir-sign">
+      <tr><td class="h">작성자 서명</td><td class="h">대표 확인</td><td class="h">확인일</td></tr>
+      <tr>
+        <td class="b">(인)</td>
+        <td class="b">${stamp || '(인)'}</td>
+        <td class="b" style="color:#333">${esc(D.confirmDate)||'20 . . .'}</td>
+      </tr>
+    </table>
+  </div>`;
+}
+
+/* ── 공용 셸 ── */
+function docDef(){ return DOC_TYPES[(D&&D.type)||'incident']; }
+function renderDoc(){
+  const el=document.getElementById('docPreview'); if(!el||!D) return;
+  el.innerHTML = docDef().render();
+  try{ LS.set('enk_doc_draft', D); }catch(e){}
+}
+function readDocForm(){ if(D) docDef().read(); }
+function writeDocForm(){
+  if(!D) D = makeIncident();
+  const sel=document.getElementById('d_type');
+  if(sel && !sel.options.length){
+    sel.innerHTML = Object.values(DOC_TYPES).map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
+  }
+  if(sel) sel.value = D.type;
+  docDef().write();
+  document.getElementById('docEditNote').textContent = editingDocId ? '저장된 문서를 수정 중입니다' : '';
+  renderDoc();
+}
+function changeDocType(id){
+  if(!DOC_TYPES[id]) return;
+  D = DOC_TYPES[id].make(); editingDocId=null;
+  writeDocForm();
+}
+function newDoc(){
+  const t = (D&&D.type)||'incident';
+  D = DOC_TYPES[t].make(); editingDocId=null;
+  writeDocForm(); toast('새 문서를 시작했습니다');
+}
+function saveDoc(){
+  readDocForm();
+  const list = LS.get('enk_docs', []);
+  if(!D.id) D.id = 'd'+Date.now();
+  const rec = Object.assign({}, D, { savedAt:new Date().toISOString() });
+  const i = list.findIndex(x=>x.id===D.id);
+  if(i>=0) list[i]=rec; else list.unshift(rec);
+  LS.set('enk_docs', list);
+  commitDocNo(D.docNo);
+  editingDocId = D.id;
+  document.getElementById('docEditNote').textContent = '저장된 문서를 수정 중입니다';
+  renderDocHistory(); toast('문서를 저장했습니다');
+}
+function renderDocHistory(){
+  const box=document.getElementById('docHistBody'); if(!box) return;
+  const list = LS.get('enk_docs', []);
+  if(!list.length){ box.innerHTML='<p class="mini">저장된 문서가 없습니다.</p>'; return; }
+  box.innerHTML = list.map(d=>{
+    const def = DOC_TYPES[d.type] || DOC_TYPES.incident;
+    return `<div class="dh-row">
+      <div class="t"><b>${esc(d.docNo)} · ${esc(def.name)}</b>
+        <span>${esc(def.label(d))} · 저장 ${esc((d.savedAt||'').slice(0,10))}</span></div>
+      <button class="btn sm" onclick="loadDoc('${d.id}')">불러오기</button>
+      <button class="btn sm ghost" onclick="delDoc('${d.id}')">삭제</button>
+    </div>`;
+  }).join('');
+}
+function loadDoc(id){
+  const d = LS.get('enk_docs', []).find(x=>x.id===id); if(!d) return;
+  D = normalizeDoc(JSON.parse(JSON.stringify(d)));
+  editingDocId = D.id;
+  writeDocForm(); toast('문서를 불러왔습니다');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function delDoc(id){
+  if(!confirm('이 문서를 삭제할까요?')) return;
+  LS.set('enk_docs', LS.get('enk_docs',[]).filter(x=>x.id!==id));
+  if(editingDocId===id){ editingDocId=null; D.id=''; document.getElementById('docEditNote').textContent=''; }
+  renderDocHistory(); toast('삭제했습니다');
+}
+function exportDocs(){ dl(JSON.stringify(LS.get('enk_docs',[])), 'ENK_내부문서_'+today()+'.json'); }
+function importDocs(inp){
+  const f=inp.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ try{
+      const arr=JSON.parse(r.result); if(!Array.isArray(arr)) throw 0;
+      const cur=LS.get('enk_docs',[]); const ids=new Set(cur.map(x=>x.id));
+      arr.forEach(x=>{ if(!ids.has(x.id)) cur.push(x); });
+      LS.set('enk_docs', cur); renderDocHistory(); toast(`${arr.length}건을 가져왔습니다`);
+    }catch(e){ toast('올바른 JSON 파일이 아닙니다'); } };
+  r.readAsText(f); inp.value='';
+}
+function printDoc(){
+  readDocForm(); renderDoc();
+  toast('인쇄 대화상자에서 "PDF로 저장"을 선택할 수도 있습니다');
+  setTimeout(()=>window.print(), 350);
+}
+/* 폼 입력 → 미리보기 실시간 반영 */
+document.querySelectorAll('#tab-doc input, #tab-doc select, #tab-doc textarea').forEach(el=>{
+  if(el.id && el.id.startsWith('d_')){
+    el.addEventListener(el.tagName==='SELECT'?'change':'input', ()=>{ readDocForm(); renderDoc(); });
+  }
+});
+
 /* ═══════════ 탭 · 초기화 ═══════════ */
 function switchTab(name){
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===name));
@@ -1436,6 +2085,7 @@ function switchTab(name){
   if(name==='settings'){ writeSettingsForm(); renderSlots(); }
   if(name==='history') renderHistory();
   if(name==='submit'){ writeSubmitForm(); renderPledgeEditor(); renderSubmitHistory(); setSubView(SUB.view||'all'); }
+  if(name==='doc'){ writeDocForm(); renderDocHistory(); paintChecks(); }
 }
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 
@@ -1448,6 +2098,9 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>switchTab(b.dat
   if(draft && (draft.items?.length || draft.school || draft.title)) Q=normalizeQuote(Object.assign(newQuote(),draft));
   editingId = Q.id || null;   // 불러온 견적은 리로드 후에도 같은 이력으로 갱신
   writeForm(); writeSettingsForm(); renderSlots(); refresh();
+  const dd = LS.get('enk_doc_draft', null);
+  D = dd ? normalizeDoc(dd) : makeIncident();
+  editingDocId = D.id || null;
 })();
 </script>
 </body>
