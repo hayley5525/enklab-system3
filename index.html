@@ -169,23 +169,23 @@ table.st td.c{text-align:center;}
 .ledger-row{display:flex; justify-content:space-between; padding:3px 2px; border-bottom:1px dashed var(--line-soft);}
 
 /* ── 기관제출 문서 ── */
-.gv-title{border:1.5px solid #111; text-align:center; font-size:22px; font-weight:800; letter-spacing:.4em; text-indent:.4em; padding:12px 0; margin-bottom:16px;}
-.gv-body{border:1.5px solid #111; padding:26px 24px; font-size:13.5px; line-height:2.05;}
+.gv-title{border:1.5px solid #111; text-align:center; font-size:25px; font-weight:800; letter-spacing:.4em; text-indent:.4em; padding:13px 0; margin-bottom:16px;}
+.gv-body{border:1.5px solid #111; padding:26px 26px; font-size:15.5px; line-height:2.15;}
 .gv-body p{margin-bottom:12px; text-align:justify;}
 .gv-body .fill{font-weight:700; border-bottom:1px solid #111; padding:0 4px;}
-.gv-date{text-align:center; font-size:14px; margin:26px 0 22px;}
-.gv-info{font-size:13px; line-height:2.1;}
+.gv-date{text-align:center; font-size:16px; margin:26px 0 22px;}
+.gv-info{font-size:14.5px; line-height:2.15;}
 .gv-info b{display:inline-block; min-width:150px;}
 .inline-stamp{position:relative; padding:0 8px; white-space:nowrap;}
 .inline-stamp img{position:absolute; left:50%; top:50%; transform:translate(-50%,-52%); width:44px; height:44px; mix-blend-mode:multiply;}
-table.pl{width:100%; border-collapse:collapse; font-size:10px; border:2px solid #111;}
+table.pl{width:100%; border-collapse:collapse; font-size:11.5px; border:2px solid #111;}
 table.pl th{border:.7px solid #111; background:#eef1f4; padding:5px 4px; font-weight:700;}
 table.pl td{border:.7px solid #111; padding:5px 6px; vertical-align:middle; text-align:justify;}
 table.pl td.c{text-align:center;}
 table.pl td.k{background:#f4f6f8; text-align:center; font-weight:700; white-space:nowrap;}
-.pl-note{font-size:9px; color:#333;}
-.pl-foot{margin-top:20px; font-size:12.5px; text-align:center; line-height:2.2;}
-.exc{font-size:9.5px; line-height:1.7;}
+.pl-note{font-size:10px; color:#333;}
+.pl-foot{margin-top:20px; font-size:14px; text-align:center; line-height:2.2;}
+.exc{font-size:11px; line-height:1.75;}
 .exc p{margin-bottom:5px; text-align:justify;}
 
 .pe-row{border:1px solid var(--line); border-radius:8px; padding:9px 11px; margin-bottom:8px; background:#fbfcfd;}
@@ -207,11 +207,14 @@ table.pl td.k{background:#f4f6f8; text-align:center; font-weight:700; white-spac
   .compose{display:block;}
   .doc-wrap{position:static;}
   .doc-scroll{max-height:none; overflow:visible; padding:0;}
-  .a4{width:auto; min-height:auto; box-shadow:none; margin:0; padding:14mm 12mm; page-break-after:always;}
+  .a4{width:auto; min-height:auto; box-shadow:none; margin:0; padding:5mm; page-break-after:always;}
   .a4:last-child{page-break-after:auto;}
-  .a4.cv{display:flex; flex-direction:column; justify-content:center; min-height:269mm;}
+  .a4.cv{display:flex; flex-direction:column; justify-content:center; min-height:287mm;}
   .a4.fill .gv-body{flex:1 1 auto; display:flex; flex-direction:column; justify-content:space-evenly;}
   .a4.fill .gv-body p{margin-bottom:0;}
+  .a4.fill .gv-body{padding:30px 34px;}
+  table.pl tr, .exc p, .gv-body p{page-break-inside:avoid;}
+  .gv-title{page-break-after:avoid;}
 }
 @page{size:A4; margin:0;}
 </style>
@@ -1064,7 +1067,7 @@ function supplierRowsExcel(ws, startRow, colK, colV, colEnd){
 }
 function buildEnkSheet(wb){
   const c=calc();
-  const ws=wb.addWorksheet('견적서',{pageSetup:{paperSize:9,fitToWidth:1,fitToHeight:0,horizontalCentered:true,verticalCentered:true,margins:{left:.5,right:.5,top:.6,bottom:.6,header:.2,footer:.2}}});
+  const ws=wb.addWorksheet('견적서',{pageSetup:{paperSize:9,fitToWidth:1,fitToHeight:0,horizontalCentered:true,verticalCentered:true,margins:{left:.2,right:.2,top:.2,bottom:.2,header:.1,footer:.1}}});
   [6,14,10,7,12,13,15,11].forEach((w,i)=>ws.getColumn(i+1).width=w);
   ws.mergeCells('A1:H1'); cell(ws,'A1','견   적   서',{font:{size:22,bold:true},align:{horizontal:'center'}}); ws.getRow(1).height=34;
   ws.mergeCells('A2:H2'); cell(ws,'A2',`견적번호 : ${Q.quoteNo}${Q.revision?'-R'+Q.revision:''}`,{font:{size:9},align:{horizontal:'right'}});
@@ -1124,7 +1127,7 @@ function buildEnkSheet(wb){
 }
 function buildGianSheet(wb){
   const c=calc();
-  const ws=wb.addWorksheet('견적서',{pageSetup:{paperSize:9,fitToWidth:1,fitToHeight:0,horizontalCentered:true,verticalCentered:true,margins:{left:.5,right:.5,top:.6,bottom:.6,header:.2,footer:.2}}});
+  const ws=wb.addWorksheet('견적서',{pageSetup:{paperSize:9,fitToWidth:1,fitToHeight:0,horizontalCentered:true,verticalCentered:true,margins:{left:.2,right:.2,top:.2,bottom:.2,header:.1,footer:.1}}});
   [7,30,11,12,18,14].forEach((w,i)=>ws.getColumn(i+1).width=w);
   ws.mergeCells('A1:F1'); cell(ws,'A1','견   적   서',{font:{size:22,bold:true},align:{horizontal:'center'}}); ws.getRow(1).height=34;
   ws.mergeCells('A2:F2'); cell(ws,'A2',`견적번호 : ${Q.quoteNo}${Q.revision?'-R'+Q.revision:''}`,{font:{size:9},align:{horizontal:'right'}});
@@ -1488,7 +1491,7 @@ function acceptPages(){
   </div>
   <div class="a4 cv">
     <div class="gv-title">용 역 내 역 서</div>
-    <table class="pl" style="font-size:11.5px">
+    <table class="pl" style="font-size:13px">
       <tr><th style="width:8%">순번</th><th style="width:26%">용역명</th><th style="width:24%">거래처명</th><th>단위 또는 세부사항</th><th style="width:15%">금액</th></tr>
       <tr><td class="c">1</td><td class="c">${esc(SUB.svcName)||'—'}</td><td class="c">${esc(s.name)}</td>
         <td class="c">${SUB.svcCount} (회(횟수)) x ${fmt(unit)}</td><td style="text-align:right">${fmt(SUB.amount)}</td></tr>
@@ -1526,7 +1529,7 @@ function pledgePages(){
   const [wy,wm,wd]=(SUB.writeDate||'--').split('-');
   return `<div class="a4">
     <div class="gv-title" style="letter-spacing:.2em">계약이행 통합서약서</div>
-    <table class="pl" style="font-size:10.5px; margin-bottom:12px">
+    <table class="pl" style="font-size:11.5px; margin-bottom:12px">
       <tr><td class="k" style="width:14%">계약명</td><td colspan="3">${esc(SUB.contractName)||'—'}</td></tr>
       <tr><td class="k">계약금액</td><td style="width:36%">금${fmt(SUB.amount)}원</td><td class="k" style="width:14%">계약보증금</td><td>금${fmt(bond)}원</td></tr>
       <tr><td class="k">업체명</td><td>${esc(s.name)}</td><td class="k">사업자번호</td><td>${esc(s.bizNo)}</td></tr>
@@ -1913,7 +1916,7 @@ async function exportStmtExcel(){
 }
 function buildStmtSheet(wb){
   const p=curPartner()||{}, s=S.supplier, c=stCalc();
-  const ws=wb.addWorksheet('거래명세서',{pageSetup:{paperSize:9,orientation:'portrait',fitToWidth:1,fitToHeight:0,horizontalCentered:true,verticalCentered:true,margins:{left:.4,right:.4,top:.6,bottom:.6,header:.2,footer:.2}}});
+  const ws=wb.addWorksheet('거래명세서',{pageSetup:{paperSize:9,orientation:'portrait',fitToWidth:1,fitToHeight:0,horizontalCentered:true,verticalCentered:true,margins:{left:.2,right:.2,top:.2,bottom:.2,header:.1,footer:.1}}});
   [7,20,12,5,9,11,9,11,11].forEach((w,i)=>ws.getColumn(i+1).width=w);
   ws.mergeCells('A1:I1'); cell(ws,'A1','거  래  명  세  서',{font:{size:20,bold:true},align:{horizontal:'center'}}); ws.getRow(1).height=32;
   ws.mergeCells('A3:D4'); cell(ws,'A3',`${p.name||''} 貴中`,{font:{size:13,bold:true},align:{horizontal:'center'},border:bAll});
