@@ -209,6 +209,7 @@ table.pl td.k{background:#f4f6f8; text-align:center; font-weight:700; white-spac
   .doc-scroll{max-height:none; overflow:visible; padding:0;}
   .a4{width:auto; min-height:auto; box-shadow:none; margin:0; padding:14mm 12mm; page-break-after:always;}
   .a4:last-child{page-break-after:auto;}
+  .a4.cv{display:flex; flex-direction:column; justify-content:center; min-height:269mm;}
 }
 @page{size:A4; margin:0;}
 </style>
@@ -285,17 +286,17 @@ table.pl td.k{background:#f4f6f8; text-align:center; font-weight:700; white-spac
           </div>
           <div class="field"><label>부가세 (VAT)</label>
             <select id="vatMode">
-              <option value="included" selected>과세 · VAT 포함</option>
-              <option value="excluded">과세 · VAT 별도 (10% 가산)</option>
+              <option value="auto" selected>사업자 설정 따름 (자동)</option>
+              <option value="taxable">과세 · 부가세 10% 포함 산출</option>
               <option value="exempt">면세</option>
             </select>
           </div>
         </div>
 
         <div class="sum-box">
-          <div class="sum-row"><span>소계</span><span id="sumSub">0원</span></div>
-          <div class="sum-row" id="rowCut" style="display:none"><span id="cutLabel">절사</span><span id="sumCut">0원</span></div>
+          <div class="sum-row"><span>소계 (공급가액)</span><span id="sumSub">0원</span></div>
           <div class="sum-row" id="rowVat" style="display:none"><span>부가세 (10%)</span><span id="sumVat">0원</span></div>
+          <div class="sum-row" id="rowCut" style="display:none"><span id="cutLabel">절사</span><span id="sumCut">0원</span></div>
           <div class="sum-row total"><span>총계 <span class="mini" id="vatNote"></span></span><span id="sumTotal">0원</span></div>
           <div class="hangul-amt" id="sumHangul"></div>
         </div>
@@ -528,6 +529,12 @@ table.pl td.k{background:#f4f6f8; text-align:center; font-weight:700; white-spac
         <div class="field"><label>담당자</label><input id="s_manager"></div>
         <div class="field"><label>입금 계좌</label><input id="s_account" placeholder="은행 계좌번호 (예금주)"></div>
       </div>
+      <div class="field"><label>과세 구분 <span class="mini" style="font-weight:400">— 견적서 부가세 산출에 자동 적용</span></label>
+        <select id="s_taxType">
+          <option value="taxable">일반과세 (합계에 부가세 10% 포함 산출)</option>
+          <option value="exempt">면세사업자 (부가세 없음)</option>
+        </select>
+      </div>
       <div class="field"><label>특이사항 기본 문구 (한 줄에 한 항목, {유효기간} 자동 치환)</label>
         <textarea id="s_terms" rows="4"></textarea></div>
       <button class="btn pri" onclick="saveSettings(true)">공급자 정보 저장</button>
@@ -566,19 +573,20 @@ let S = LS.get('enk_settings', {
   images:{ bizCert:null, bankCopy:null, stamp:null }   // {dataUrl,w,h,fileName}
 });
 /* 다중 사업자 프로필: 기존 단일 데이터는 프로필 1로 자동 이전 */
-function emptySupplier(){ return { bizNo:'', ceo:'', name:'', addr:'', bizType:'', bizItem:'', phone:'', email:'', manager:'', account:'' }; }
+function emptySupplier(){ return { bizNo:'', ceo:'', name:'', addr:'', bizType:'', bizItem:'', phone:'', email:'', manager:'', account:'', taxType:'taxable' }; }
 function normalizeSettings(){
   if(!Array.isArray(S.profiles) || !S.profiles.length){
     S.profiles=[{ id:uid(), supplier:S.supplier||emptySupplier(), images:S.images||{bizCert:null,bankCopy:null,stamp:null} }];
     S.active=0;
   }
   S.active=Math.min(Math.max(S.active||0,0), S.profiles.length-1);
+  S.profiles.forEach(p=>{ if(!p.supplier.taxType) p.supplier.taxType='taxable'; });
   S.supplier=S.profiles[S.active].supplier;   // 활성 프로필과 참조 연결
   S.images=S.profiles[S.active].images;
 }
 normalizeSettings();
 function setActiveProfile(i){ S.active=i; S.supplier=S.profiles[i].supplier; S.images=S.profiles[i].images; }
-function profileLabel(p,i){ return (p.supplier.name||'').trim() || `사업자 ${i+1}`; }
+function profileLabel(p,i){ const n=(p.supplier.name||'').trim() || `사업자 ${i+1}`; return n + (p.supplier.taxType==='exempt'?' (면세)':''); }
 function syncProfileSelectors(){
   const opts=S.profiles.map((p,i)=>`<option value="${i}" ${i===S.active?'selected':''}>${esc(profileLabel(p,i))}</option>`).join('');
   ['profileSelW','profileSelS','profileSelT'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML=opts; });
@@ -622,7 +630,7 @@ function newQuote(){
   return { id:null, quoteNo: nextQuoteNo(), revision:0, profileId: (S&&S.profiles)?S.profiles[S.active].id:null,
     title:'', subtitle:'', quoteDate:today, eduDates:[], school:'', dept:'',
     validDays:10, classCount:1, studentTotal:0, sessions:4,
-    items:[], rounding:'tenthousand', vatMode:'included',
+    items:[], rounding:'tenthousand', vatMode:'auto',
     terms: S.terms };
 }
 function nextQuoteNo(){
@@ -634,6 +642,8 @@ function nextQuoteNo(){
 function normalizeQuote(q){
   if(!Array.isArray(q.eduDates)) q.eduDates = q.eduDate ? [q.eduDate] : [];
   delete q.eduDate;
+  if(q.vatMode==='excluded') q.vatMode='taxable';        // 구버전 데이터 이전
+  else if(q.vatMode==='included') q.vatMode='auto';
   return q;
 }
 function eduStr(){
@@ -699,14 +709,16 @@ function applyBasis(it){
 function itemAmount(it){ return (it.qty1||0)*(it.qty2||0)*(it.unitPrice||0); }
 function calc(){
   const sub = Q.items.reduce((s,it)=>s+itemAmount(it),0);
+  // 과세 구분: 견적에서 자동(사업자 따름) 또는 직접 지정
+  const mode = (Q.vatMode==='taxable'||Q.vatMode==='exempt') ? Q.vatMode : (S.supplier.taxType||'taxable');
+  const vat = mode==='taxable' ? Math.round(sub*0.1) : 0;
+  const gross = sub + vat;                       // 부가세 포함 금액
   const unit = Q.rounding==='thousand'?1000 : Q.rounding==='tenthousand'?10000 : 1;
-  const afterCut = Math.floor(sub/unit)*unit;
-  const cut = sub-afterCut;
-  const vat = Q.vatMode==='excluded' ? Math.round(afterCut*0.1) : 0;
-  const total = afterCut + vat;
-  return {sub, cut, vat, total,
+  const total = Math.floor(gross/unit)*unit;     // 절사는 부가세 포함 금액에 적용
+  const cut = gross - total;
+  return {sub, vat, cut, total, mode,
     cutLabel: Q.rounding==='thousand'?'천원 단위 이하 절사':Q.rounding==='tenthousand'?'만원 단위 이하 절사':'',
-    vatLabel: Q.vatMode==='included'?'(부가가치세 포함)':Q.vatMode==='excluded'?'(부가가치세 별도)':'(면세)'};
+    vatLabel: '(부가가치세 포함)'};   // 면세 사업자도 문서 표기는 '부가가치세 포함' 유지
 }
 
 /* ═══════════ 프리셋 ═══════════ */
@@ -869,7 +881,7 @@ function stampHtml(){
   return S.images.stamp ? `<div class="stamp-spot"><img src="${S.images.stamp.dataUrl}" alt="직인"></div>` : '';
 }
 function attachPages(){
-  const pg=(t,img)=>`<div class="a4 attach-page"><h3>붙임 — ${t}</h3>${
+  const pg=(t,img)=>`<div class="a4 cv attach-page"><h3>붙임 — ${t}</h3>${
     img?`<img src="${img.dataUrl}" alt="${t}">`:`<div class="attach-missing">${t} 이미지가 등록되지 않았습니다.<br>설정 화면에서 업로드하면 이 페이지에 자동 삽입됩니다.</div>`}</div>`;
   return pg('사업자등록증', S.images.bizCert) + pg('통장사본', S.images.bankCopy);
 }
@@ -902,7 +914,7 @@ function renderPreview(){
   el.innerHTML = head + attachPages();
 }
 function enkPage(c){
-  return `<div class="a4">
+  return `<div class="a4 cv">
     <div class="q-title">견 적 서</div>
     <div class="q-no">견적번호 : ${esc(Q.quoteNo)}${Q.revision?'-R'+Q.revision:''}</div>
     <div class="q-head">
@@ -920,7 +932,7 @@ function enkPage(c){
       <tr><th colspan="2" style="width:34%">품 명</th><th>규 격</th><th style="width:7%">수량</th><th style="width:8%">수량</th><th style="width:12%">단 가</th><th style="width:15%">공급가액</th><th style="width:9%">비고</th></tr>
       ${itemRowsHtml(false)}
       <tr><td colspan="2" class="cen" style="font-weight:700">소 계</td><td colspan="4"></td><td class="num">${fmt(c.sub)}</td><td class="cen" style="font-size:10px">${c.cutLabel}</td></tr>
-      <tr><td colspan="2" class="cen" style="font-weight:700; background:#eef1f4">총 계</td><td colspan="4" class="cen">${c.vat?`부가세 ${fmt(c.vat)}원 별도 가산`:''}</td><td class="num" style="font-weight:800; background:#eef1f4">${fmt(c.total)}</td><td class="cen" style="font-size:10px">${c.vatLabel.replace(/[()]/g,'')}</td></tr>
+      <tr><td colspan="2" class="cen" style="font-weight:700; background:#eef1f4">총 계</td><td colspan="4" class="cen" style="font-size:10px">${c.vat?`공급가액 ${fmt(c.sub)}원 + 부가세 ${fmt(c.vat)}원`:''}</td><td class="num" style="font-weight:800; background:#eef1f4">${fmt(c.total)}</td><td class="cen" style="font-size:10px">${c.vatLabel.replace(/[()]/g,'')}</td></tr>
     </table>
     <div class="q-terms"><b>※ 특이사항</b><ul>${termsList().map(t=>`<li>${esc(t)}</li>`).join('')}</ul>
       ${S.supplier.account?`<p style="margin-top:6px">입금계좌 : ${esc(S.supplier.account)}</p>`:''}</div>
@@ -928,7 +940,7 @@ function enkPage(c){
   </div>`;
 }
 function gianPage(c){
-  return `<div class="a4">
+  return `<div class="a4 cv">
     <div class="q-title">견 적 서</div>
     <div class="q-no">견적번호 : ${esc(Q.quoteNo)}${Q.revision?'-R'+Q.revision:''}</div>
     <div style="font-size:13px; margin-bottom:12px; line-height:2">
@@ -1049,7 +1061,7 @@ function supplierRowsExcel(ws, startRow, colK, colV, colEnd){
 }
 function buildEnkSheet(wb){
   const c=calc();
-  const ws=wb.addWorksheet('견적서',{pageSetup:{paperSize:9,fitToWidth:1,fitToHeight:0,margins:{left:.5,right:.5,top:.6,bottom:.6,header:.2,footer:.2}}});
+  const ws=wb.addWorksheet('견적서',{pageSetup:{paperSize:9,fitToWidth:1,fitToHeight:0,horizontalCentered:true,verticalCentered:true,margins:{left:.5,right:.5,top:.6,bottom:.6,header:.2,footer:.2}}});
   [6,14,10,7,12,13,15,11].forEach((w,i)=>ws.getColumn(i+1).width=w);
   ws.mergeCells('A1:H1'); cell(ws,'A1','견   적   서',{font:{size:22,bold:true},align:{horizontal:'center'}}); ws.getRow(1).height=34;
   ws.mergeCells('A2:H2'); cell(ws,'A2',`견적번호 : ${Q.quoteNo}${Q.revision?'-R'+Q.revision:''}`,{font:{size:9},align:{horizontal:'right'}});
@@ -1096,7 +1108,7 @@ function buildEnkSheet(wb){
   cell(ws,'G'+r,c.sub,{align:{horizontal:'right'},border:bAll,numFmt:'#,##0'});
   cell(ws,'H'+r,c.cutLabel,{font:{size:7.5},align:{horizontal:'center'},border:bAll}); r++;
   ws.mergeCells(`A${r}:B${r}`); cell(ws,'A'+r,'총 계',{font:{bold:true},align:{horizontal:'center'},border:bAll,fill:'FFEEF1F4'});
-  ws.mergeCells(`C${r}:F${r}`); cell(ws,'C'+r, c.vat?`부가세 ${fmt(c.vat)}원 별도 가산`:'',{font:{size:8.5},align:{horizontal:'center'},border:bAll});
+  ws.mergeCells(`C${r}:F${r}`); cell(ws,'C'+r, c.vat?`공급가액 ${fmt(c.sub)}원 + 부가세 ${fmt(c.vat)}원`:'',{font:{size:8.5},align:{horizontal:'center',wrapText:false,shrinkToFit:true},border:bAll});
   cell(ws,'G'+r,c.total,{font:{bold:true},align:{horizontal:'right'},border:bAll,fill:'FFEEF1F4',numFmt:'#,##0'});
   cell(ws,'H'+r,c.vatLabel.replace(/[()]/g,''),{font:{size:7.5},align:{horizontal:'center'},border:bAll});
   outline(ws,tTop,1,r,8);   // 품목표 전체 (A~H)
@@ -1109,7 +1121,7 @@ function buildEnkSheet(wb){
 }
 function buildGianSheet(wb){
   const c=calc();
-  const ws=wb.addWorksheet('견적서',{pageSetup:{paperSize:9,fitToWidth:1,fitToHeight:0,margins:{left:.5,right:.5,top:.6,bottom:.6,header:.2,footer:.2}}});
+  const ws=wb.addWorksheet('견적서',{pageSetup:{paperSize:9,fitToWidth:1,fitToHeight:0,horizontalCentered:true,verticalCentered:true,margins:{left:.5,right:.5,top:.6,bottom:.6,header:.2,footer:.2}}});
   [7,30,11,12,18,14].forEach((w,i)=>ws.getColumn(i+1).width=w);
   ws.mergeCells('A1:F1'); cell(ws,'A1','견   적   서',{font:{size:22,bold:true},align:{horizontal:'center'}}); ws.getRow(1).height=34;
   ws.mergeCells('A2:F2'); cell(ws,'A2',`견적번호 : ${Q.quoteNo}${Q.revision?'-R'+Q.revision:''}`,{font:{size:9},align:{horizontal:'right'}});
@@ -1242,12 +1254,13 @@ function removeWhite(){
 /* ═══════════ 설정 저장/백업 ═══════════ */
 function readSettingsForm(){
   const s=S.supplier;
-  ['bizNo','ceo','name','addr','bizType','bizItem','phone','email','manager','account'].forEach(k=>s[k]=document.getElementById('s_'+k).value);
+  ['bizNo','ceo','name','addr','bizType','bizItem','phone','email','manager','account','taxType'].forEach(k=>s[k]=document.getElementById('s_'+k).value);
   S.terms=document.getElementById('s_terms').value;
 }
 function writeSettingsForm(){
   const s=S.supplier;
   ['bizNo','ceo','name','addr','bizType','bizItem','phone','email','manager','account'].forEach(k=>document.getElementById('s_'+k).value=s[k]??'');
+  document.getElementById('s_taxType').value=s.taxType||'taxable';
   document.getElementById('s_terms').value=S.terms??DEFAULT_TERMS;
 }
 function saveSettings(fromBtn){
@@ -1855,7 +1868,7 @@ function renderStPreview(){
       <td class="n">${v?fmt(v):''}</td><td class="n">${fmt(sup+v)}</td><td class="c">${esc(l.rmk||'')}</td></tr>`;
   }).join('');
   const fill=Array(Math.max(0,ST_BODY_ROWS-ST.lines.length)).fill('<tr>'+'<td></td>'.repeat(9)+'</tr>').join('');
-  box.innerHTML=`<div class="a4">
+  box.innerHTML=`<div class="a4 cv">
     <div class="q-title" style="font-size:28px; margin-bottom:16px">거 래 명 세 서</div>
     <div style="display:flex; gap:10px; margin-bottom:12px; align-items:stretch">
       <div class="st-recv" style="flex:1; margin-bottom:0; display:flex; flex-direction:column; justify-content:center">
@@ -1899,7 +1912,7 @@ async function exportStmtExcel(){
 }
 function buildStmtSheet(wb){
   const p=curPartner()||{}, s=S.supplier, c=stCalc();
-  const ws=wb.addWorksheet('거래명세서',{pageSetup:{paperSize:9,orientation:'portrait',fitToWidth:1,fitToHeight:0,horizontalCentered:true,margins:{left:.4,right:.4,top:.6,bottom:.6,header:.2,footer:.2}}});
+  const ws=wb.addWorksheet('거래명세서',{pageSetup:{paperSize:9,orientation:'portrait',fitToWidth:1,fitToHeight:0,horizontalCentered:true,verticalCentered:true,margins:{left:.4,right:.4,top:.6,bottom:.6,header:.2,footer:.2}}});
   [7,20,12,5,9,11,9,11,11].forEach((w,i)=>ws.getColumn(i+1).width=w);
   ws.mergeCells('A1:I1'); cell(ws,'A1','거  래  명  세  서',{font:{size:20,bold:true},align:{horizontal:'center'}}); ws.getRow(1).height=32;
   ws.mergeCells('A3:D4'); cell(ws,'A3',`${p.name||''} 貴中`,{font:{size:13,bold:true},align:{horizontal:'center'},border:bAll});
