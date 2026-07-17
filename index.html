@@ -98,9 +98,9 @@ main{max-width:1420px; margin:0 auto; padding:20px 22px 60px;}
 .q-left{flex:1; font-size:13px; padding-top:6px;}
 .q-left p{margin-bottom:7px;}
 .q-left .to{font-size:16px; font-weight:700; border-bottom:1px solid #111; display:inline-block; padding:0 6px 2px 2px;}
-.sup{width:408px; border:2px solid #111; font-size:11px; position:relative;}
-.sup table{width:100%; border-collapse:collapse;}
-.sup td{border:.6px solid #444; padding:4px 6px; white-space:nowrap;}
+.sup{display:inline-block; flex:0 0 auto; max-width:100%; border:none; font-size:11px; position:relative;}
+.sup table{border-collapse:collapse; border:2px solid #111;}
+.sup td{border:1px solid #333; padding:4px 8px; white-space:nowrap;}
 .sup td.k{background:#f0f2f5; width:72px; text-align:center; font-weight:700; white-space:nowrap;}
 .stamp-spot{position:absolute; right:4px; top:20px; width:42px; height:42px;}
 .stamp-spot img{width:100%; height:100%; object-fit:contain; mix-blend-mode:multiply;}
@@ -497,7 +497,9 @@ table.pl td.k{background:#f4f6f8; text-align:center; font-weight:700; white-spac
           <button id="svPledge" onclick="setSubView('pledge')">서약서</button>
         </div>
         <div class="spacer"></div>
-        <button class="btn seal" onclick="printSubmit()">인쇄 / PDF 저장</button>
+        <button class="btn seal" onclick="exportSubmitDocx()">Word(.docx)</button>
+        <button class="btn" onclick="exportSubmitExcel()">엑셀(.xlsx)</button>
+        <button class="btn" onclick="printSubmit()">인쇄 / PDF 저장</button>
       </div>
       <div class="doc-scroll" id="subPreview"></div>
     </div>
@@ -918,6 +920,7 @@ function renderPreview(){
   const c=calc(), el=document.getElementById('preview');
   const head = currentForm==='enk' ? enkPage(c) : gianPage(c);
   el.innerHTML = head + attachPages();
+  fitSupBoxes(el);
 }
 function enkPage(c){
   return `<div class="a4 cv">
@@ -1895,6 +1898,7 @@ function renderStPreview(){
       <span>공급자 : ${esc(s.name)}　대표 ${esc(s.ceo)}　${stampOn('(인)')}</span>
     </div>
   </div>`;
+  fitSupBoxes(box);
 }
 function printStmt(){ stChanged(); toast('인쇄 대화상자에서 "PDF로 저장"을 선택할 수도 있습니다'); setTimeout(()=>window.print(),350); }
 
@@ -2027,6 +2031,282 @@ function renderStmtTab(){
   const d=document.getElementById('st_date'); if(d && !d.value) d.value=ST.date;
   const m=document.getElementById('st_memo'); if(m) m.value=ST.memo??DEFAULT_STMT_MEMO;
   syncPtSel(); renderCatalog(); renderStLines(); renderStHistory(); stChanged();
+}
+
+/* ═══════════ 기관제출 문서 Word(.docx) · 엑셀 내보내기 ═══════════ */
+function fitSupBoxes(root){
+  // 공급자 박스가 지면 폭을 넘으면 글자 자동 축소 (안전장치)
+  try{
+    if(!root||!root.querySelectorAll) return;
+    root.querySelectorAll('.sup').forEach(b=>{
+      b.style.fontSize='';
+      let fs=11;
+      const parent=b.parentElement; if(!parent||!parent.clientWidth) return;
+      const avail=parent.clientWidth-140;   // 좌측 수신 영역 최소 폭 확보
+      while(b.offsetWidth>avail && fs>8){ fs-=0.5; b.style.fontSize=fs+'px'; }
+    });
+  }catch(e){}
+}
+
+let _docxLoading=null;
+function loadDocxLib(){
+  if(window.docx) return Promise.resolve();
+  if(_docxLoading) return _docxLoading;
+  _docxLoading=new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/docx@9.6.1/dist/index.iife.js';
+    s.onload=()=>window.docx?res():rej(new Error('docx 초기화 실패'));
+    s.onerror=()=>rej(new Error('docx 라이브러리 로드 실패'));
+    document.head.appendChild(s);
+  });
+  return _docxLoading;
+}
+function stampBytes(){
+  const st=S.images.stamp; if(!st) return null;
+  const b64=st.dataUrl.split(',')[1];
+  const bin=atob(b64), arr=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+  return {data:arr, type: st.dataUrl.includes('image/png')?'png':'jpg'};
+}
+function subFileBase(){
+  const org=(SUB.org||'기관').replace(/\s+/g,'');
+  const kind=SUB.view==='accept'?'승낙사항':SUB.view==='pledge'?'통합서약서':'기관제출서류';
+  return `${kind}_${org}_${SUB.writeDate||''}`;
+}
+function dlBlob(blob,name){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=name; a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ── docx 빌더 ── */
+function dxHelpers(){
+  const D=window.docx, F='맑은 고딕';
+  const bd=(s=4)=>({top:{style:D.BorderStyle.SINGLE,size:s},bottom:{style:D.BorderStyle.SINGLE,size:s},left:{style:D.BorderStyle.SINGLE,size:s},right:{style:D.BorderStyle.SINGLE,size:s}});
+  const runs=(t,o={})=>[new D.TextRun({text:t,bold:!!o.b,size:o.s||22,font:F,color:o.color})];
+  const P=(t,o={})=>new D.Paragraph({alignment:o.center?D.AlignmentType.CENTER:(o.right?D.AlignmentType.RIGHT:D.AlignmentType.JUSTIFIED),children:runs(t,o),spacing:{after:o.after??60,line:o.line}});
+  const TC=(ch,o={})=>new D.TableCell({borders:bd(o.bs||4),verticalAlign:D.VerticalAlign.CENTER,width:o.w?{size:o.w,type:D.WidthType.PERCENTAGE}:undefined,shading:o.bg?{fill:o.bg}:undefined,columnSpan:o.span,children:Array.isArray(ch)?ch:[ch]});
+  const titleBox=(t,size)=>new D.Table({width:{size:100,type:D.WidthType.PERCENTAGE},rows:[new D.TableRow({children:[new D.TableCell({borders:bd(12),children:[new D.Paragraph({alignment:D.AlignmentType.CENTER,spacing:{before:120,after:120},children:runs(t,{b:1,s:size||44})})]})]})]});
+  const stampRun=()=>{ const sb=stampBytes(); return sb?[new D.ImageRun({type:sb.type==='png'?'png':'jpg',data:sb.data,transformation:{width:34,height:34}})]:[]; };
+  const inRun=(t,o={})=>new D.TextRun({text:t,bold:!!o.b,size:o.s||22,font:F});
+  return {D,F,bd,P,TC,titleBox,stampRun,inRun};
+}
+function acceptDocxChildren(h){
+  const {D,P,TC,titleBox,stampRun,inRun}=h, s=S.supplier, c=(()=>{const unit=SUB.svcCount>0?Math.round(SUB.amount/SUB.svcCount):SUB.amount; return {unit};})();
+  const info=(k,v)=>new D.Paragraph({spacing:{after:80},children:[inRun(k,{b:1,s:24}), inRun('  :  '+(v||'—'),{s:24})]});
+  const kids=[
+    titleBox('승 낙 사 항 ( 용 역 집 행 )',40),
+    P('',{after:200}),
+    P(`1) 계약사항에 의하여 ${fmtDate(SUB.startDate)||'          '} 착수하고 ${fmtDate(SUB.endDate)||'          '} 까지 완료하여야 한다.`,{s:26,after:220,line:340}),
+    P('2) 계약의 변경으로 인하여 계약금액에 증감이 생긴 때에는 명세서상의 그 단가로 증감하고 그 단가에 의하기 어려운 때에는 계약변경 당시의 단가에 의한다.',{s:26,after:220,line:340}),
+    P(`3) 기한내에 용역을 완료하지 못할 때에는 그 지연일수 1일에 대하여 계약금액의 1000분의 ${SUB.delayRate} 에 해당하는 지연배상금을 납부하여야 하며, 납부하여야 할 금액은 계약대가에서 상계할 수 있다.`,{s:26,after:220,line:340}),
+    P(`4) 계약대상자는 그 용역 완료일로부터 ${SUB.warrantyYears}년간 그 용역의 하자에 대하여 담보책임을 진다.`,{s:26,after:220,line:340}),
+    P('5) 기타 이 계약서에 명시되지 아니한 사항은 지방자치단체(국가)를 당사자로 하는 계약에 관한 법률 등의 규정을 준용한다.',{s:26,after:340,line:340}),
+    P(fmtDate(SUB.writeDate),{center:1,s:26,after:340}),
+    info('계   약   명',SUB.contractName),
+    info('상호 또는 법인명칭',s.name),
+    info('주민(법인)등록번호',s.bizNo),
+    info('전  화  번  호',s.phone),
+    info('주            소',s.addr),
+    new D.Paragraph({spacing:{after:80},children:[inRun('대   표   자',{b:1,s:24}), inRun('  :  '+(s.ceo||'—')+'  (인) ',{s:24}), ...stampRun()]}),
+  ];
+  // 페이지 나눔 후 용역내역서
+  const unit=SUB.svcCount>0?Math.round(SUB.amount/SUB.svcCount):SUB.amount;
+  kids.push(new D.Paragraph({children:[],pageBreakBefore:true}));
+  kids.push(titleBox('용 역 내 역 서',36));
+  kids.push(P('',{after:160}));
+  kids.push(new D.Table({width:{size:100,type:D.WidthType.PERCENTAGE},rows:[
+    new D.TableRow({children:[TC(P('순번',{b:1,center:1,s:20,after:0}),{bg:'EEF1F4',w:8}),TC(P('용역명',{b:1,center:1,s:20,after:0}),{bg:'EEF1F4',w:26}),TC(P('거래처명',{b:1,center:1,s:20,after:0}),{bg:'EEF1F4',w:26}),TC(P('단위 또는 세부사항',{b:1,center:1,s:20,after:0}),{bg:'EEF1F4'}),TC(P('금액',{b:1,center:1,s:20,after:0}),{bg:'EEF1F4',w:14})]}),
+    new D.TableRow({children:[TC(P('1',{center:1,s:20,after:0})),TC(P(SUB.svcName||'—',{center:1,s:20,after:0})),TC(P(s.name||'',{center:1,s:20,after:0})),TC(P(`${SUB.svcCount} (회(횟수)) x ${fmt(unit)}`,{center:1,s:20,after:0})),TC(P(fmt(SUB.amount),{right:1,s:20,after:0}))]}),
+    new D.TableRow({children:[TC(P('합   계',{b:1,center:1,s:20,after:0}),{span:4}),TC(P(fmt(SUB.amount),{b:1,right:1,s:20,after:0}))]})
+  ]}));
+  return kids;
+}
+function pledgeDocxChildren(h){
+  const {D,P,TC,titleBox,stampRun,inRun}=h, s=S.supplier;
+  const bond=Math.round(SUB.amount*(SUB.bondRate||10)/100);
+  const org=SUB.org||'○○학교';
+  const hp=(t)=>P(t,{center:1,s:19,b:1,after:0});
+  const infoTable=new D.Table({width:{size:100,type:D.WidthType.PERCENTAGE},rows:[
+    new D.TableRow({children:[TC(hp('계약명'),{bg:'F4F6F8',w:14}),TC(P(SUB.contractName||'—',{s:19,after:0}),{span:3})]}),
+    new D.TableRow({children:[TC(hp('계약금액'),{bg:'F4F6F8'}),TC(P(`금${fmt(SUB.amount)}원`,{s:19,after:0}),{w:36}),TC(hp('계약보증금'),{bg:'F4F6F8',w:14}),TC(P(`금${fmt(bond)}원`,{s:19,after:0}))]}),
+    new D.TableRow({children:[TC(hp('업체명')),TC(P(s.name||'',{s:19,after:0})),TC(hp('사업자번호'),{bg:'F4F6F8'}),TC(P(s.bizNo||'',{s:19,after:0}))]}),
+    new D.TableRow({children:[TC(hp('연락처'),{bg:'F4F6F8'}),TC(P(s.phone||'',{s:19,after:0})),TC(hp('계약기간'),{bg:'F4F6F8'}),TC(P(`${dotFmt(SUB.startDate)} ~ ${dotFmt(SUB.endDate)}`,{s:19,after:0}))]}),
+    new D.TableRow({children:[TC(hp('소재지'),{bg:'F4F6F8'}),TC(P(s.addr||'',{s:19,after:0})),TC(hp('대표자'),{bg:'F4F6F8'}),TC(P(s.ceo||'',{s:19,after:0}))]}),
+    new D.TableRow({children:[TC(hp('하자보증'),{bg:'F4F6F8'}),TC(P('「지방계약법 시행규칙」 제68조 및 제70조에 따름',{s:19,after:0}),{span:3})]})
+  ]});
+  const yn=(v)=> v==='none'?null:`[${v==='yes'?'○':'  '}] 예   [${v==='no'?'○':'  '}] 아니오   [${v==='na'?'○':'  '}] 해당없음`;
+  const signCell=()=>TC([new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[inRun('(서명 또는 인) ',{s:14}), ...stampRun().map(r=>r)]})],{w:11});
+  const rows=[new D.TableRow({children:[TC(hp('순'),{bg:'EEF1F4',w:5}),TC(hp('구분'),{bg:'EEF1F4',w:14}),TC(hp('이행 내용'),{bg:'EEF1F4'}),TC(hp('대표자 확인'),{bg:'EEF1F4',w:11})]})];
+  PLEDGE_DEF.forEach((d,i)=>{
+    const p=SUB.pledge[i];
+    const paras=pledgeText(i).split('\n').map(s2=>s2.trim()).filter(Boolean).map(l=>P(l,{s:18,after:40}));
+    if(d.extra==='privacy'){
+      paras.push(new D.Table({width:{size:100,type:D.WidthType.PERCENTAGE},rows:[
+        new D.TableRow({children:[TC(P('항목',{b:1,center:1,s:16,after:0}),{bg:'EEF1F4'}),TC(P('수집ㆍ이용 목적',{b:1,center:1,s:16,after:0}),{bg:'EEF1F4'}),TC(P('보유ㆍ이용기간',{b:1,center:1,s:16,after:0}),{bg:'EEF1F4',w:22})]}),
+        new D.TableRow({children:[TC(P('계약업체명, 계약자명, 업체담당자, 휴대폰 번호, 이메일주소',{s:16,after:0})),TC(P('계약관리를 위한 안내, 교육수요자 청렴정책 추진, 부패비리 문자 안내',{s:16,after:0})),TC(P('계약체결일 다음 연도부터 5년',{center:1,s:16,after:0}))]}),
+        new D.TableRow({children:[TC(P('직책 / 성명',{b:1,center:1,s:16,after:0}),{bg:'F4F6F8'}),TC(P(`대표 / ${s.ceo}   (휴대폰 : ${s.phone})`,{s:16,after:0}),{span:2})]}),
+        new D.TableRow({children:[TC(P('동의 여부',{b:1,center:1,s:16,after:0}),{bg:'F4F6F8'}),TC(P('■ 예   □ 아니오',{s:16,after:0}),{span:2})]})
+      ]}));
+      paras.push(P(`위의 개인정보 수집ㆍ이용에 대한 동의를 거부할 권리가 있습니다.`,{s:15,after:40}));
+      paras.push(P(`${dotFmt(SUB.writeDate)}   동의자   ${s.ceo}   (서명)`,{s:17,after:0}));
+    }
+    const line=yn(p.check);
+    if(line) paras.push(P(line,{s:17,after:0}));
+    rows.push(new D.TableRow({children:[TC(P(String(i+1),{center:1,s:18,after:0}),{w:5}),TC(P(d.t.replace('[공사] ',''),{center:1,s:17,after:0}),{w:14}),TC(paras),signCell()]}));
+  });
+  const [wy,wm,wd]=(SUB.writeDate||'--').split('-');
+  const kids=[
+    titleBox('계약이행 통합서약서',36), P('',{after:120}),
+    infoTable, P('',{after:120}),
+    new D.Table({width:{size:100,type:D.WidthType.PERCENTAGE},rows}),
+    P('',{after:120}),
+    P("상기 '계약이행 통합서약서'에 대한 내용에 동의하고 이상이 없음을 확인합니다.",{center:1,s:22,after:160}),
+    P(`${wy}.  ${+wm||''}.  ${+wd||''}.`,{center:1,s:22,after:160}),
+    new D.Paragraph({alignment:D.AlignmentType.CENTER,spacing:{after:160},children:[inRun(`계약상대자 : ${s.name}   대표  ${s.ceo}  (인) `,{s:22}), ...stampRun()]}),
+    P(`${org}장 귀하`,{center:1,b:1,s:28,after:280}),
+    titleBox('붙임 — 수의계약 배제사유',30), P('',{after:100})
+  ];
+  ['① 견적서 제출 마감일 현재 부도·파산·해산·영업정지 등이 확정된 경우',
+   '② 입찰참가자격 제한기간 중에 있는 자(법 제31조 제5항에 해당되는 경우 예외)',
+   '③ 견적서 제출 마감일을 기준으로 법 제31조 또는 다른 법령에 따라 부실이행, 담합행위, 입찰․계약 서류의 허위․위조 제출, 입찰·낙찰·계약이행 관련 뇌물 제공으로 부정당업자 제재 처분을 받고 그 종료일로부터 3개월이 지나지 아니한 자(법 제31조 제5항에 해당되는 경우 예외)',
+   '④ 공사 또는 기술용역의 경우 기술자 보유현황이 관련법령에 따른 업종등록 기준에 미달하는 자',
+   '⑤ 견적서 제출 마감일 기준 최근 3개월 이내에 해당 지방자치단체의 입찰․계약 및 그 이행과 관련하여 10일 이상 지연배상금 부과, 정당한 이행명령 거부, 불법하도급, 5회 이상 하자보수 또는 물의를 일으키는 등 신용이 떨어져 계약 체결이 곤란하다고 판단되는 자',
+   '⑥ 견적서 제출 마감일 기준 최근 3개월 이내에 해당 지방자치단체와의 계약 및 그 이행과 관련하여 정당한 이유 없이 계약에 응하지 아니하거나 포기서를 제출한 사실이 있는 자',
+   '⑦ 수의계약 체결일 현재 법 제33조에 해당하는 자 (지방자치단체의 장 또는 지방의회의원의 배우자·직계 존비속인 사업자 등)',
+   '⑧ 발주기관이 제한한 자격요건 등을 충족하지 아니한 자',
+   '⑨ 그밖에 계약담당자가 계약이행능력이 없다고 판단되는 명백한 증거가 있는 자',
+   '⑩ 「재난 및 안전관리 기본법」 제60조에 따라 특별재난지역으로 선포된 지역의 재난복구공사(용역)의 경우 결격여부 심사일 현재 계약금액 5천만원 이상 해당업종 관급공사 또는 계약금액 2천만원 이상 관급용역이 3건 이상인 자'
+  ].forEach(t=>kids.push(P(t,{s:17,after:70})));
+  return kids;
+}
+function buildSubmitDoc(){
+  const D=window.docx, h=dxHelpers();
+  const M={top:283,bottom:283,left:283,right:283};   // 0.5cm
+  const sections=[];
+  if(SUB.view!=='pledge') sections.push({properties:{page:{margin:M}},children:acceptDocxChildren(h)});
+  if(SUB.view!=='accept') sections.push({properties:{page:{margin:M}},children:pledgeDocxChildren(h)});
+  return new D.Document({sections});
+}
+async function exportSubmitDocx(){
+  readSubmitForm();
+  try{
+    await loadDocxLib();
+    const doc=buildSubmitDoc();
+    const blob=await window.docx.Packer.toBlob(doc);
+    dlBlob(blob, subFileBase()+'.docx');
+    toast('Word 파일이 다운로드되었습니다');
+  }catch(e){
+    console.error(e);
+    if(confirm('Word 생성에 실패했습니다 ('+e.message+').\n대신 엑셀(.xlsx)로 다운로드할까요?')) exportSubmitExcel();
+  }
+}
+
+/* ── 엑셀 빌더 (행 높이 자동 추정) ── */
+function estRowHeight(text, colChars, fontPt){
+  const perLine=Math.max(10, Math.floor(colChars/2));   // 한글=2문자 폭
+  const lines=Math.max(1, Math.ceil(String(text||'').length/perLine));
+  return Math.max(18, lines*((fontPt||9)+4.5));
+}
+function buildAcceptSheets(wb){
+  const s=S.supplier;
+  const ws=wb.addWorksheet('승낙사항',{pageSetup:{paperSize:9,fitToWidth:1,fitToHeight:0,horizontalCentered:true,verticalCentered:true,margins:{left:.2,right:.2,top:.2,bottom:.2,header:.1,footer:.1}}});
+  ws.getColumn(1).width=100;
+  let r=1;
+  cell(ws,'A'+r,'승 낙 사 항 ( 용 역 집 행 )',{font:{size:20,bold:true},align:{horizontal:'center'},border:bBox}); ws.getRow(r).height=40; r+=2;
+  const clauses=[
+    `1) 계약사항에 의하여 ${fmtDate(SUB.startDate)} 착수하고 ${fmtDate(SUB.endDate)} 까지 완료하여야 한다.`,
+    '2) 계약의 변경으로 인하여 계약금액에 증감이 생긴 때에는 명세서상의 그 단가로 증감하고 그 단가에 의하기 어려운 때에는 계약변경 당시의 단가에 의한다.',
+    `3) 기한내에 용역을 완료하지 못할 때에는 그 지연일수 1일에 대하여 계약금액의 1000분의 ${SUB.delayRate} 에 해당하는 지연배상금을 납부하여야 하며, 납부하여야 할 금액은 계약대가에서 상계할 수 있다.`,
+    `4) 계약대상자는 그 용역 완료일로부터 ${SUB.warrantyYears}년간 그 용역의 하자에 대하여 담보책임을 진다.`,
+    '5) 기타 이 계약서에 명시되지 아니한 사항은 지방자치단체(국가)를 당사자로 하는 계약에 관한 법률 등의 규정을 준용한다.'];
+  clauses.forEach(t=>{ cell(ws,'A'+r,t,{font:{size:12},align:{wrapText:true,vertical:'middle'}}); ws.getRow(r).height=estRowHeight(t,100,12)+8; r++; });
+  r++;
+  cell(ws,'A'+r,fmtDate(SUB.writeDate),{font:{size:12,bold:true},align:{horizontal:'center'}}); r+=2;
+  [['계   약   명',SUB.contractName],['상호 또는 법인명칭',s.name],['주민(법인)등록번호',s.bizNo],['전  화  번  호',s.phone],['주            소',s.addr],['대   표   자',(s.ceo||'')+'  (인)']].forEach(([k,v])=>{
+    cell(ws,'A'+r,`${k}  :  ${v||'—'}`,{font:{size:12},align:{wrapText:false,shrinkToFit:true}}); ws.getRow(r).height=22; r++;
+  });
+  addStamp(wb, ws, {col:0.62, row:r-1.85}, 32);
+  // 용역내역서 시트
+  const ws2=wb.addWorksheet('용역내역서',{pageSetup:{paperSize:9,fitToWidth:1,fitToHeight:0,horizontalCentered:true,verticalCentered:true,margins:{left:.2,right:.2,top:.2,bottom:.2,header:.1,footer:.1}}});
+  [8,24,26,28,14].forEach((w,i)=>ws2.getColumn(i+1).width=w);
+  ws2.mergeCells('A1:E1'); cell(ws2,'A1','용 역 내 역 서',{font:{size:18,bold:true},align:{horizontal:'center'},border:bBox}); ws2.getRow(1).height=34;
+  ['순번','용역명','거래처명','단위 또는 세부사항','금액'].forEach((t,i)=>cell(ws2,String.fromCharCode(65+i)+'3',t,{font:{bold:true,size:10},align:{horizontal:'center'},border:bAll,fill:'FFEEF1F4'}));
+  const unit=SUB.svcCount>0?Math.round(SUB.amount/SUB.svcCount):SUB.amount;
+  cell(ws2,'A4',1,{align:{horizontal:'center'},border:bAll});
+  cell(ws2,'B4',SUB.svcName||'',{align:{horizontal:'center',wrapText:false,shrinkToFit:true},border:bAll});
+  cell(ws2,'C4',s.name||'',{align:{horizontal:'center',wrapText:false,shrinkToFit:true},border:bAll});
+  cell(ws2,'D4',`${SUB.svcCount} (회(횟수)) x ${fmt(unit)}`,{align:{horizontal:'center'},border:bAll});
+  cell(ws2,'E4',SUB.amount,{align:{horizontal:'right'},border:bAll,numFmt:'#,##0'});
+  ws2.mergeCells('A5:D5'); cell(ws2,'A5','합   계',{font:{bold:true},align:{horizontal:'center'},border:bAll});
+  cell(ws2,'E5',SUB.amount,{font:{bold:true},align:{horizontal:'right'},border:bAll,numFmt:'#,##0'});
+  outline(ws2,3,1,5,5);
+}
+function buildPledgeSheet(wb){
+  const s=S.supplier, org=SUB.org||'○○학교', bond=Math.round(SUB.amount*(SUB.bondRate||10)/100);
+  const ws=wb.addWorksheet('통합서약서',{pageSetup:{paperSize:9,fitToWidth:1,fitToHeight:0,horizontalCentered:true,margins:{left:.2,right:.2,top:.2,bottom:.2,header:.1,footer:.1}}});
+  [5,13,84,12].forEach((w,i)=>ws.getColumn(i+1).width=w);
+  ws.mergeCells('A1:D1'); cell(ws,'A1','계약이행 통합서약서',{font:{size:18,bold:true},align:{horizontal:'center'},border:bBox}); ws.getRow(1).height=34;
+  let r=3;
+  const info=[['계약명',SUB.contractName,'',''],['계약금액',`금${fmt(SUB.amount)}원`,'계약보증금',`금${fmt(bond)}원`],['업체명',s.name,'사업자번호',s.bizNo],['연락처',s.phone,'계약기간',`${dotFmt(SUB.startDate)} ~ ${dotFmt(SUB.endDate)}`],['소재지',s.addr,'대표자',s.ceo],['하자보증','「지방계약법 시행규칙」 제68조 및 제70조에 따름','','']];
+  info.forEach(row=>{
+    cell(ws,'A'+r,row[0],{font:{bold:true,size:9},align:{horizontal:'center'},border:bAll,fill:'FFF4F6F8'});
+    if(row[2]===''){ ws.mergeCells(`B${r}:D${r}`); cell(ws,'B'+r,row[1]||'',{font:{size:9},align:{wrapText:false,shrinkToFit:true},border:bAll}); }
+    else{
+      cell(ws,'B'+r,row[1]||'',{font:{size:9},align:{wrapText:false,shrinkToFit:true},border:bAll});
+      cell(ws,'C'+r,row[2],{font:{bold:true,size:9},align:{horizontal:'center'},border:bAll,fill:'FFF4F6F8'});
+      cell(ws,'D'+r,row[3]||'',{font:{size:9},align:{wrapText:false,shrinkToFit:true},border:bAll});
+    }
+    ws.getRow(r).height=20; r++;
+  });
+  outline(ws,3,1,r-1,4); r++;
+  const th=r;
+  ['순','구분','이행 내용','대표자 확인'].forEach((t,i)=>cell(ws,String.fromCharCode(65+i)+r,t,{font:{bold:true,size:9},align:{horizontal:'center'},border:bAll,fill:'FFEEF1F4'})); r++;
+  const yn=(v)=> v==='none'?'':`\n[${v==='yes'?'○':'  '}] 예   [${v==='no'?'○':'  '}] 아니오   [${v==='na'?'○':'  '}] 해당없음`;
+  PLEDGE_DEF.forEach((d,i)=>{
+    const p=SUB.pledge[i];
+    let txt=pledgeText(i);
+    if(d.extra==='privacy'){
+      txt+=`\n[항목] 계약업체명, 계약자명, 업체담당자, 휴대폰, 이메일  [목적] 계약관리 안내, 청렴정책 추진  [기간] 계약체결일 다음 연도부터 5년\n직책/성명 : 대표 / ${s.ceo}   동의 여부 : ■ 예  □ 아니오\n${dotFmt(SUB.writeDate)}   동의자   ${s.ceo}   (서명)`;
+    }
+    txt+=yn(p.check);
+    cell(ws,'A'+r,i+1,{font:{size:9},align:{horizontal:'center',vertical:'middle'},border:bAll});
+    cell(ws,'B'+r,d.t.replace('[공사] ',''),{font:{size:8.5},align:{horizontal:'center',vertical:'middle',wrapText:true},border:bAll});
+    cell(ws,'C'+r,txt,{font:{size:8.5},align:{wrapText:true,vertical:'middle'},border:bAll});
+    cell(ws,'D'+r,'(서명 또는 인)',{font:{size:7.5},align:{horizontal:'center',vertical:'middle'},border:bAll});
+    ws.getRow(r).height=estRowHeight(txt,84,8.5);
+    addStamp(wb, ws, {col:3.28, row:r-1+0.12}, 26);
+    r++;
+  });
+  outline(ws,th,1,r-1,4); r++;
+  ws.mergeCells(`A${r}:D${r}`); cell(ws,'A'+r,"상기 '계약이행 통합서약서'에 대한 내용에 동의하고 이상이 없음을 확인합니다.",{font:{size:10},align:{horizontal:'center'}}); r++;
+  const [wy,wm,wd]=(SUB.writeDate||'--').split('-');
+  ws.mergeCells(`A${r}:D${r}`); cell(ws,'A'+r,`${wy}.  ${+wm||''}.  ${+wd||''}.`,{font:{size:10},align:{horizontal:'center'}}); r++;
+  ws.mergeCells(`A${r}:D${r}`); cell(ws,'A'+r,`계약상대자 : ${s.name}   대표  ${s.ceo}  (인)`,{font:{size:10},align:{horizontal:'center'}});
+  addStamp(wb, ws, {col:2.7, row:r-1+0.05}, 28); r++;
+  ws.mergeCells(`A${r}:D${r}`); cell(ws,'A'+r,`${org}장 귀하`,{font:{size:12,bold:true},align:{horizontal:'center'}}); r+=2;
+  ws.mergeCells(`A${r}:D${r}`); cell(ws,'A'+r,'붙임 — 수의계약 배제사유',{font:{size:12,bold:true},align:{horizontal:'center'},border:bBox}); ws.getRow(r).height=24; r++;
+  ['① 견적서 제출 마감일 현재 부도·파산·해산·영업정지 등이 확정된 경우',
+   '② 입찰참가자격 제한기간 중에 있는 자(법 제31조 제5항에 해당되는 경우 예외)',
+   '③ 견적서 제출 마감일을 기준으로 법 제31조 또는 다른 법령에 따라 부실이행, 담합행위, 입찰․계약 서류의 허위․위조 제출, 입찰·낙찰·계약이행 관련 뇌물 제공으로 부정당업자 제재 처분을 받고 그 종료일로부터 3개월이 지나지 아니한 자',
+   '④ 공사 또는 기술용역의 경우 기술자 보유현황이 관련법령에 따른 업종등록 기준에 미달하는 자',
+   '⑤ 최근 3개월 이내에 해당 지방자치단체의 입찰․계약 및 그 이행과 관련하여 10일 이상 지연배상금 부과, 정당한 이행명령 거부, 불법하도급, 5회 이상 하자보수 등으로 신용이 떨어져 계약 체결이 곤란하다고 판단되는 자',
+   '⑥ 최근 3개월 이내에 해당 지방자치단체와의 계약 및 그 이행과 관련하여 정당한 이유 없이 계약에 응하지 아니하거나 포기서를 제출한 사실이 있는 자',
+   '⑦ 수의계약 체결일 현재 법 제33조에 해당하는 자 (지방자치단체의 장 또는 지방의회의원의 배우자·직계 존비속인 사업자 등)',
+   '⑧ 발주기관이 제한한 자격요건 등을 충족하지 아니한 자',
+   '⑨ 그밖에 계약담당자가 계약이행능력이 없다고 판단되는 명백한 증거가 있는 자',
+   '⑩ 「재난 및 안전관리 기본법」 제60조에 따른 특별재난지역 재난복구공사(용역)의 경우 계약금액 기준 3건 이상 수의계약 체결자'
+  ].forEach(t=>{ ws.mergeCells(`A${r}:D${r}`); cell(ws,'A'+r,t,{font:{size:8.5},align:{wrapText:true,vertical:'middle'}}); ws.getRow(r).height=estRowHeight(t,114,8.5); r++; });
+}
+async function exportSubmitExcel(){
+  readSubmitForm();
+  try{
+    const wb=new ExcelJS.Workbook();
+    if(SUB.view!=='pledge') buildAcceptSheets(wb);
+    if(SUB.view!=='accept') buildPledgeSheet(wb);
+    const buf=await wb.xlsx.writeBuffer();
+    dlBlob(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), subFileBase()+'.xlsx');
+    toast('엑셀 파일이 다운로드되었습니다');
+  }catch(e){ console.error(e); alert('엑셀 생성 오류: '+e.message); }
 }
 
 /* ═══════════ 탭 · 초기화 ═══════════ */
