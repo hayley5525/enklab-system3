@@ -149,7 +149,7 @@ table.hist td{border-bottom:1px solid var(--line-soft); padding:9px 6px; font-va
 .cat-row input[type=number]{padding:4px 6px; font-size:.82rem;}
 .cat-row.manage{grid-template-columns:1fr 96px 84px 52px;}
 .cat-row.manage input{padding:4px 6px; font-size:.82rem;}
-.st-line{display:grid; grid-template-columns:1.3fr 1fr 62px 84px 86px 96px 44px; gap:6px; align-items:center; margin-bottom:6px;}
+.st-line{display:grid; grid-template-columns:1.15fr .85fr 54px 78px 82px 88px .8fr 40px; gap:6px; align-items:center; margin-bottom:6px;}
 .st-line input,.st-line select{padding:5px 7px; font-size:.84rem;}
 .st-amt{font-size:.83rem; text-align:right; font-variant-numeric:tabular-nums; background:#eef3f8; border:1px solid var(--line-soft); border-radius:6px; padding:5px 7px;}
 .st-recv{border:1.6px solid #111; text-align:center; padding:14px 10px; margin-bottom:12px; position:relative;}
@@ -381,8 +381,10 @@ table.pl td.k{background:#f4f6f8; text-align:center; font-weight:700; white-spac
         <div class="items-head">
           <h2 style="margin:0">명세서 품목</h2>
           <div style="display:flex; gap:6px; align-items:center">
+            <label style="margin:0">사업자</label>
+            <select id="profileSelT" onchange="switchProfile(+this.value)" style="width:130px"></select>
             <label style="margin:0">발행일</label>
-            <input type="date" id="st_date" style="width:150px" onchange="stChanged()">
+            <input type="date" id="st_date" style="width:145px" onchange="stChanged()">
             <button class="btn sm" onclick="addManualLine()">+ 직접 행 추가</button>
           </div>
         </div>
@@ -396,6 +398,8 @@ table.pl td.k{background:#f4f6f8; text-align:center; font-weight:700; white-spac
             <input type="number" id="st_prev" style="width:150px; text-align:right" oninput="stChanged()"></div>
           <div class="sum-row"><span>총미수금</span><span id="stTotalBal" style="font-weight:700; color:#1a52a8">0원</span></div>
         </div>
+        <div class="field" style="margin-top:10px"><label>비고 문구 (문서 하단 · 수정 가능, 한 줄에 한 항목)</label>
+          <textarea id="st_memo" rows="2" oninput="stChanged()"></textarea></div>
       </div>
 
       <div class="card" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
@@ -550,6 +554,9 @@ table.pl td.k{background:#f4f6f8; text-align:center; font-weight:700; white-spac
 <div class="toast" id="toast"></div>
 <script>
 /* ═══════════ 상태 ═══════════ */
+let __uidSeq = LS_SAFE_INIT();
+function LS_SAFE_INIT(){ return 0; }
+function uid(){ return Date.now()*1000 + (__uidSeq++ % 1000); }
 const LS = { set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)), get:(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}} };
 const DEFAULT_TERMS = "본 견적서는 견적일로부터 {유효기간}일간 유효합니다.\n행사 마감 후 15일 이내 입금을 요청드립니다.\n계산서는 교육 완료 후 발행됩니다.";
 
@@ -562,7 +569,7 @@ let S = LS.get('enk_settings', {
 function emptySupplier(){ return { bizNo:'', ceo:'', name:'', addr:'', bizType:'', bizItem:'', phone:'', email:'', manager:'', account:'' }; }
 function normalizeSettings(){
   if(!Array.isArray(S.profiles) || !S.profiles.length){
-    S.profiles=[{ id:Date.now(), supplier:S.supplier||emptySupplier(), images:S.images||{bizCert:null,bankCopy:null,stamp:null} }];
+    S.profiles=[{ id:uid(), supplier:S.supplier||emptySupplier(), images:S.images||{bizCert:null,bankCopy:null,stamp:null} }];
     S.active=0;
   }
   S.active=Math.min(Math.max(S.active||0,0), S.profiles.length-1);
@@ -574,7 +581,7 @@ function setActiveProfile(i){ S.active=i; S.supplier=S.profiles[i].supplier; S.i
 function profileLabel(p,i){ return (p.supplier.name||'').trim() || `사업자 ${i+1}`; }
 function syncProfileSelectors(){
   const opts=S.profiles.map((p,i)=>`<option value="${i}" ${i===S.active?'selected':''}>${esc(profileLabel(p,i))}</option>`).join('');
-  ['profileSelW','profileSelS'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML=opts; });
+  ['profileSelW','profileSelS','profileSelT'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML=opts; });
 }
 function switchProfile(i){
   if(i===S.active){ syncProfileSelectors(); return; }
@@ -582,11 +589,12 @@ function switchProfile(i){
   setActiveProfile(i);
   saveSettings();
   writeSettingsForm(); renderSlots(); syncProfileSelectors(); refresh();
+  if(typeof stChanged==='function') stChanged();
   toast(`공급자 전환 : ${profileLabel(S.profiles[i],i)}`);
 }
 function addProfile(){
   readSettingsForm();
-  S.profiles.push({ id:Date.now(), supplier:emptySupplier(), images:{bizCert:null,bankCopy:null,stamp:null} });
+  S.profiles.push({ id:uid(), supplier:emptySupplier(), images:{bizCert:null,bankCopy:null,stamp:null} });
   setActiveProfile(S.profiles.length-1);
   saveSettings();
   writeSettingsForm(); renderSlots(); syncProfileSelectors(); refresh();
@@ -1274,7 +1282,7 @@ function saveQuote(){
   if(!Q.school && !Q.title){ toast('수신 학교명 또는 견적명을 입력하세요'); return; }
   const hist=LS.get('enk_history',[]);
   const c=calc();
-  const rec={...structuredClone(Q), id:editingId||Date.now(), savedAt:new Date().toISOString(), total:c.total};
+  const rec={...structuredClone(Q), id:editingId||uid(), savedAt:new Date().toISOString(), total:c.total};
   const idx=hist.findIndex(h=>h.id===rec.id);
   if(idx>=0) hist[idx]=rec; else { hist.unshift(rec); commitQuoteNo(Q.quoteNo); }
   editingId=rec.id; Q.id=rec.id;
@@ -1543,7 +1551,7 @@ function saveSubmit(){
   readSubmitForm();
   if(!SUB.org){ toast('발주기관(학교명)을 입력하세요'); return; }
   const hist=LS.get('enk_submit_history',[]);
-  const rec=Object.assign(structuredClone(SUB), {id: subEditingId||Date.now(), savedAt:new Date().toISOString()});
+  const rec=Object.assign(structuredClone(SUB), {id: subEditingId||uid(), savedAt:new Date().toISOString()});
   const idx=hist.findIndex(h=>h.id===rec.id);
   if(idx>=0) hist[idx]=rec; else hist.unshift(rec);
   subEditingId=rec.id; SUB.id=rec.id;
@@ -1627,14 +1635,16 @@ let CAT = LS.get('enk_catalog', null) || structuredClone(CATALOG_DEF);
 function saveCatalog(){ LS.set('enk_catalog',CAT); }
 let PT = LS.get('enk_partners', []);   // {id,name,phone,addr,startBalance,payments:[{date,amount}]}
 function savePartners(){ LS.set('enk_partners',PT); }
+const DEFAULT_STMT_MEMO='전자세금계산서 발행 시 부가세 10%가 추가됩니다.';
 let ST = LS.get('enk_stmt', null) || newStmtObj();
+if(ST.memo===undefined) ST.memo=DEFAULT_STMT_MEMO;
 let stEditingId = ST.id || null;
 let catManage=false, ptEditMode=false, ledgerOpen=false;
 const catSel={};   // 카탈로그 체크 상태 {idx: qty}
 
 function newStmtObj(){
   return { id:null, date:new Date().toISOString().slice(0,10),
-    partnerId: PT[0]?.id ?? null, prevBalance:null, lines:[] };
+    partnerId: PT[0]?.id ?? null, prevBalance:null, lines:[], memo:DEFAULT_STMT_MEMO };
 }
 function curPartner(){ return PT.find(p=>p.id===ST.partnerId) || null; }
 function stmtTotalOf(st){
@@ -1704,7 +1714,7 @@ function savePartner(){
     addr:document.getElementById('pt_addr').value,
     startBalance:+document.getElementById('pt_start').value||0 };
   if(ptEditMode && curPartner()){ Object.assign(curPartner(),data); }
-  else { const rec=Object.assign({id:Date.now(), payments:[]},data); PT.push(rec); ST.partnerId=rec.id; if(!stEditingId) ST.prevBalance=null; }
+  else { const rec=Object.assign({id:uid(), payments:[]},data); PT.push(rec); ST.partnerId=rec.id; if(!stEditingId) ST.prevBalance=null; }
   savePartners(); hidePtForm(); syncPtSel(); stChanged();
   toast('기관 정보가 저장되었습니다');
 }
@@ -1783,18 +1793,18 @@ function addSelectedToLines(){
   const keys=Object.keys(catSel);
   if(!keys.length){ toast('품목을 체크하세요'); return; }
   keys.forEach(i=>{ const c=CAT[+i]; if(!c) return;
-    ST.lines.push({ name:c.name, note:c.cat, qty:catSel[i]||1, price:c.price, tax:'exempt' });   // 단가 스냅샷·현금가 면세
+    ST.lines.push({ name:c.name, note:c.cat, qty:catSel[i]||1, price:c.price, tax:'exempt', rmk:'' });   // 단가 스냅샷·현금가 면세
     delete catSel[i]; });
   renderCatalog(); renderStLines(); stChanged();
   toast('선택 품목을 명세서에 담았습니다');
 }
 
 /* ── 명세서 품목 편집 ── */
-function addManualLine(){ ST.lines.push({name:'', note:'', qty:1, price:0, tax:'exempt'}); renderStLines(); stChanged(); }
+function addManualLine(){ ST.lines.push({name:'', note:'', qty:1, price:0, tax:'exempt', rmk:''}); renderStLines(); stChanged(); }
 function renderStLines(){
   const box=document.getElementById('stLines'); if(!box) return;
   if(!ST.lines.length){ box.innerHTML='<p class="empty" style="padding:14px">카탈로그에서 담거나 직접 행을 추가하세요.</p>'; return; }
-  box.innerHTML='<div class="st-line mini" style="margin-bottom:2px"><span>품목명</span><span>적요</span><span>수량</span><span>단가</span><span>과세</span><span>합계</span><span></span></div>'+
+  box.innerHTML='<div class="st-line mini" style="margin-bottom:2px"><span>품목명</span><span>적요</span><span>수량</span><span>단가</span><span>과세</span><span>합계</span><span>비고</span><span></span></div>'+
     ST.lines.map((l,i)=>{
       const sup=(l.qty||0)*(l.price||0), v=l.tax==='taxable'?Math.round(sup*0.1):0;
       return `<div class="st-line">
@@ -1806,6 +1816,7 @@ function renderStLines(){
           <option value="exempt" ${l.tax!=='taxable'?'selected':''}>면세</option>
           <option value="taxable" ${l.tax==='taxable'?'selected':''}>과세 10%</option></select>
         <div class="st-amt" id="stAmt${i}">${fmt(sup+v)}</div>
+        <input value="${esc(l.rmk||'')}" placeholder="비고" oninput="updStLine(${i},'rmk',this.value)">
         <button class="btn ghost sm" onclick="delStLine(${i})">삭제</button></div>`;
     }).join('');
 }
@@ -1818,6 +1829,7 @@ function delStLine(i){ ST.lines.splice(i,1); renderStLines(); stChanged(); }
 
 function stChanged(rerender){
   ST.date=document.getElementById('st_date')?.value||ST.date;
+  const mm=document.getElementById('st_memo'); if(mm) ST.memo=mm.value;
   const pv=document.getElementById('st_prev');
   if(pv && pv.value!=='' && document.activeElement===pv) ST.prevBalance=+pv.value||0;
   const c=stCalc();
@@ -1840,24 +1852,27 @@ function renderStPreview(){
     const sup=(l.qty||0)*(l.price||0), v=l.tax==='taxable'?Math.round(sup*0.1):0;
     return `<tr><td class="c">${mmdd(ST.date)}</td><td>${esc(l.name)}</td><td class="c">${esc(l.note)}</td>
       <td class="n">${fmt(l.qty)}</td><td class="n">${fmt(l.price)}</td><td class="n">${fmt(sup)}</td>
-      <td class="n">${v?fmt(v):''}</td><td class="n">${fmt(sup+v)}</td></tr>`;
+      <td class="n">${v?fmt(v):''}</td><td class="n">${fmt(sup+v)}</td><td class="c">${esc(l.rmk||'')}</td></tr>`;
   }).join('');
-  const fill=Array(Math.max(0,ST_BODY_ROWS-ST.lines.length)).fill('<tr>'+'<td></td>'.repeat(8)+'</tr>').join('');
+  const fill=Array(Math.max(0,ST_BODY_ROWS-ST.lines.length)).fill('<tr>'+'<td></td>'.repeat(9)+'</tr>').join('');
   box.innerHTML=`<div class="a4">
     <div class="q-title" style="font-size:28px; margin-bottom:16px">거 래 명 세 서</div>
-    <div class="st-recv">${stampHtml()}
-      <b>${esc(p?.name)||'수신처를 선택하세요'} 貴中</b>
-      ${p?.addr?`<p>${esc(p.addr)}</p>`:''}
-      <p>☎ ${esc(p?.phone)||''}</p>
+    <div style="display:flex; gap:10px; margin-bottom:12px; align-items:stretch">
+      <div class="st-recv" style="flex:1; margin-bottom:0; display:flex; flex-direction:column; justify-content:center">
+        <b>${esc(p?.name)||'수신처를 선택하세요'} 貴中</b>
+        ${p?.addr?`<p>${esc(p.addr)}</p>`:''}
+        <p>☎ ${esc(p?.phone)||''}</p>
+      </div>
+      ${supplierBox()}
     </div>
     <div class="st-money"><span>금 액 : ${c.total?numToHangul(c.total).replace('원',''):'　'}원 정</span><span>(₩ ${fmt(c.total)})</span></div>
     <table class="st">
-      <tr><th style="width:8%">일자</th><th style="width:24%">품목명[규격]</th><th style="width:15%">적요</th>
-        <th style="width:7%">수량</th><th style="width:10%">단가</th><th style="width:13%">공급가액</th>
-        <th style="width:10%">부가세</th><th style="width:13%">합계</th></tr>
+      <tr><th style="width:7%">일자</th><th style="width:21%">품목명[규격]</th><th style="width:13%">적요</th>
+        <th style="width:6%">수량</th><th style="width:9%">단가</th><th style="width:12%">공급가액</th>
+        <th style="width:9%">부가세</th><th style="width:11%">합계</th><th style="width:12%">비고</th></tr>
       ${rows}${fill}
     </table>
-    <div class="st-note">비고<br><span class="bal">전미수금 : ${fmt(c.prev)} / 총미수금 : ${fmt(c.totalBal)}</span></div>
+    <div class="st-note">비고<br>${esc(ST.memo||'').split('\n').map(s=>s.trim()).filter(Boolean).map(s=>'· '+s).join('<br>')}<br><span class="bal">전미수금 : ${fmt(c.prev)} / 총미수금 : ${fmt(c.totalBal)}</span></div>
     <div class="st-acct">
       <span><b>입금계좌번호</b>　${esc(s.account)||'설정에서 입금 계좌를 입력하세요'}</span>
       <span>공급자 : ${esc(s.name)}　대표 ${esc(s.ceo)}　${stampOn('(인)')}</span>
@@ -1885,17 +1900,20 @@ async function exportStmtExcel(){
 function buildStmtSheet(wb){
   const p=curPartner()||{}, s=S.supplier, c=stCalc();
   const ws=wb.addWorksheet('거래명세서',{pageSetup:{paperSize:9,orientation:'portrait',fitToWidth:1,fitToHeight:0,horizontalCentered:true,margins:{left:.4,right:.4,top:.6,bottom:.6,header:.2,footer:.2}}});
-  [8,22,14,6,10,12,10,12].forEach((w,i)=>ws.getColumn(i+1).width=w);
-  ws.mergeCells('A1:H1'); cell(ws,'A1','거  래  명  세  서',{font:{size:20,bold:true},align:{horizontal:'center'}}); ws.getRow(1).height=32;
-  ws.mergeCells('A3:H3'); cell(ws,'A3',`${p.name||''} 貴中`,{font:{size:13,bold:true},align:{horizontal:'center'},border:bAll}); ws.getRow(3).height=24;
-  ws.mergeCells('A4:H4'); cell(ws,'A4',p.addr||'',{font:{size:9},align:{horizontal:'center'},border:bAll});
-  ws.mergeCells('A5:H5'); cell(ws,'A5',`☎ ${p.phone||''}`,{font:{size:9},align:{horizontal:'center'},border:bAll});
-  outline(ws,3,1,5,8);
-  ws.mergeCells('A7:F7'); cell(ws,'A7',`금 액 : ${c.total?numToHangul(c.total).replace('원',''):''}원 정`,{font:{size:12,bold:true},border:bAll,align:{wrapText:false,shrinkToFit:true}});
-  ws.mergeCells('G7:H7'); cell(ws,'G7',`(₩ ${fmt(c.total)})`,{font:{size:12,bold:true},align:{horizontal:'right'},border:bAll});
-  outline(ws,7,1,7,8); ws.getRow(7).height=24;
-  let r=9;
-  ['일자','품목명[규격]','적요','수량','단가','공급가액','부가세','합계'].forEach((t,i)=>cell(ws,String.fromCharCode(65+i)+r,t,{font:{bold:true,size:9.5},align:{horizontal:'center'},border:bAll,fill:'FFEEF1F4'}));
+  [7,20,12,5,9,11,9,11,11].forEach((w,i)=>ws.getColumn(i+1).width=w);
+  ws.mergeCells('A1:I1'); cell(ws,'A1','거  래  명  세  서',{font:{size:20,bold:true},align:{horizontal:'center'}}); ws.getRow(1).height=32;
+  ws.mergeCells('A3:D4'); cell(ws,'A3',`${p.name||''} 貴中`,{font:{size:13,bold:true},align:{horizontal:'center'},border:bAll});
+  ws.mergeCells('A5:D6'); cell(ws,'A5',p.addr||'',{font:{size:9},align:{horizontal:'center',wrapText:true},border:bAll});
+  ws.mergeCells('A7:D7'); cell(ws,'A7',`☎ ${p.phone||''}`,{font:{size:9},align:{horizontal:'center'},border:bAll});
+  outline(ws,3,1,7,4);
+  supplierRowsExcel(ws,3,'E','F','I');   // 우리 사업자 정보 (활성 프로필)
+  outline(ws,3,5,7,9);
+  addStamp(wb, ws, {col:8.35, row:3.05}, 32);
+  ws.mergeCells('A9:F9'); cell(ws,'A9',`금 액 : ${c.total?numToHangul(c.total).replace('원',''):''}원 정`,{font:{size:12,bold:true},border:bAll,align:{wrapText:false,shrinkToFit:true}});
+  ws.mergeCells('G9:I9'); cell(ws,'G9',`(₩ ${fmt(c.total)})`,{font:{size:12,bold:true},align:{horizontal:'right'},border:bAll});
+  outline(ws,9,1,9,9); ws.getRow(9).height=24;
+  let r=11;
+  ['일자','품목명[규격]','적요','수량','단가','공급가액','부가세','합계','비고'].forEach((t,i)=>cell(ws,String.fromCharCode(65+i)+r,t,{font:{bold:true,size:9.5},align:{horizontal:'center'},border:bAll,fill:'FFEEF1F4'}));
   const tTop=r; r++;
   ST.lines.forEach(l=>{
     const sup=(l.qty||0)*(l.price||0), v=l.tax==='taxable'?Math.round(sup*0.1):0;
@@ -1907,24 +1925,30 @@ function buildStmtSheet(wb){
     cell(ws,'F'+r,sup,{font:{size:9},align:{horizontal:'right'},border:bAll,numFmt:'#,##0'});
     cell(ws,'G'+r,v||'',{font:{size:9},align:{horizontal:'right'},border:bAll,numFmt:'#,##0'});
     cell(ws,'H'+r,sup+v,{font:{size:9},align:{horizontal:'right'},border:bAll,numFmt:'#,##0'});
+    cell(ws,'I'+r,l.rmk||'',{font:{size:9},align:{horizontal:'center',wrapText:false,shrinkToFit:true},border:bAll});
     r++;
   });
   for(let k=ST.lines.length;k<ST_BODY_ROWS;k++){
-    for(let ci=0;ci<8;ci++) cell(ws,String.fromCharCode(65+ci)+r,'',{border:bAll});
+    for(let ci=0;ci<9;ci++) cell(ws,String.fromCharCode(65+ci)+r,'',{border:bAll});
     r++;
   }
-  outline(ws,tTop,1,r-1,8);
+  outline(ws,tTop,1,r-1,9);
   r++;
-  ws.mergeCells(`A${r}:H${r}`); cell(ws,'A'+r,'비고',{font:{size:9,bold:true},border:bAll}); r++;
-  ws.mergeCells(`A${r}:H${r}`);
+  const noteTop=r;
+  ws.mergeCells(`A${r}:I${r}`); cell(ws,'A'+r,'비고',{font:{size:9,bold:true},border:bAll}); r++;
+  (ST.memo||'').split('\n').map(s=>s.trim()).filter(Boolean).forEach(l=>{
+    ws.mergeCells(`A${r}:I${r}`);
+    cell(ws,'A'+r,'· '+l,{font:{size:9},border:bAll,align:{wrapText:false,shrinkToFit:true}}); r++;
+  });
+  ws.mergeCells(`A${r}:I${r}`);
   cell(ws,'A'+r,`전미수금 : ${fmt(c.prev)} / 총미수금 : ${fmt(c.totalBal)}`,{font:{size:10,bold:true,color:{argb:'FF1A52A8'}},border:bAll});
-  outline(ws,r-1,1,r,8); r+=2;
+  outline(ws,noteTop,1,r,9); r+=2;
   ws.mergeCells(`A${r}:D${r}`);
   cell(ws,'A'+r,`입금계좌번호  ${s.account||''}`,{font:{size:9.5,bold:true},border:bAll,align:{wrapText:false,shrinkToFit:true}});
-  ws.mergeCells(`E${r}:H${r}`);
+  ws.mergeCells(`E${r}:I${r}`);
   cell(ws,'E'+r,`공급자 : ${s.name}  대표 ${s.ceo}      (인)`,{font:{size:9.5},align:{horizontal:'right',wrapText:false,shrinkToFit:true},border:bAll});
-  outline(ws,r,1,r,8); ws.getRow(r).height=22;
-  addStamp(wb, ws, {col:7.45, row:r-1+0.05}, 30);
+  outline(ws,r,1,r,9); ws.getRow(r).height=22;
+  addStamp(wb, ws, {col:8.45, row:r-1+0.05}, 30);
 }
 
 /* ── 발급 이력 ── */
@@ -1936,7 +1960,7 @@ function saveStmt(){
   const c=stCalc();
   ST.prevBalance=c.prev;   // 전미수금 스냅샷 확정
   const hist=LS.get('enk_stmt_history',[]);
-  const rec=Object.assign(structuredClone(ST), {id: stEditingId||Date.now(), savedAt:new Date().toISOString()});
+  const rec=Object.assign(structuredClone(ST), {id: stEditingId||uid(), savedAt:new Date().toISOString()});
   const idx=hist.findIndex(h=>h.id===rec.id);
   if(idx>=0) hist[idx]=rec; else hist.unshift(rec);
   stEditingId=rec.id; ST.id=rec.id;
@@ -1960,8 +1984,10 @@ function renderStHistory(){
 function loadStmt(id){
   const h=LS.get('enk_stmt_history',[]).find(x=>x.id===id); if(!h) return;
   ST=structuredClone(h); stEditingId=id;
+  if(ST.memo===undefined) ST.memo=DEFAULT_STMT_MEMO;
   LS.set('enk_stmt',ST);
   document.getElementById('st_date').value=ST.date;
+  document.getElementById('st_memo').value=ST.memo;
   syncPtSel(); renderStLines(); renderStHistory(); stChanged();
   toast('명세서를 불러왔습니다 — 수정 후 저장하면 갱신됩니다');
 }
@@ -1977,10 +2003,12 @@ function newStmt(){
   ST=newStmtObj(); ST.partnerId=curPartner()?.id ?? PT[0]?.id ?? null;
   LS.set('enk_stmt',ST);
   document.getElementById('st_date').value=ST.date;
+  document.getElementById('st_memo').value=ST.memo;
   syncPtSel(); renderStLines(); renderStHistory(); stChanged();
 }
 function renderStmtTab(){
   const d=document.getElementById('st_date'); if(d && !d.value) d.value=ST.date;
+  const m=document.getElementById('st_memo'); if(m) m.value=ST.memo??DEFAULT_STMT_MEMO;
   syncPtSel(); renderCatalog(); renderStLines(); renderStHistory(); stChanged();
 }
 
