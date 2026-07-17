@@ -210,6 +210,8 @@ table.pl td.k{background:#f4f6f8; text-align:center; font-weight:700; white-spac
   .a4{width:auto; min-height:auto; box-shadow:none; margin:0; padding:14mm 12mm; page-break-after:always;}
   .a4:last-child{page-break-after:auto;}
   .a4.cv{display:flex; flex-direction:column; justify-content:center; min-height:269mm;}
+  .a4.fill .gv-body{flex:1 1 auto; display:flex; flex-direction:column; justify-content:space-evenly;}
+  .a4.fill .gv-body p{margin-bottom:0;}
 }
 @page{size:A4; margin:0;}
 </style>
@@ -709,8 +711,9 @@ function applyBasis(it){
 function itemAmount(it){ return (it.qty1||0)*(it.qty2||0)*(it.unitPrice||0); }
 function calc(){
   const sub = Q.items.reduce((s,it)=>s+itemAmount(it),0);
-  // 과세 구분: 견적에서 자동(사업자 따름) 또는 직접 지정
-  const mode = (Q.vatMode==='taxable'||Q.vatMode==='exempt') ? Q.vatMode : (S.supplier.taxType||'taxable');
+  // 기본 동작: 입력한 금액(공급가액)은 그대로 두고 +10% 부가세를 더해 총계 산출
+  // (어느 사업자를 선택해도 동일. '면세'를 직접 지정한 경우에만 가산 없음)
+  const mode = Q.vatMode==='exempt' ? 'exempt' : 'taxable';
   const vat = mode==='taxable' ? Math.round(sub*0.1) : 0;
   const gross = sub + vat;                       // 부가세 포함 금액
   const unit = Q.rounding==='thousand'?1000 : Q.rounding==='tenthousand'?10000 : 1;
@@ -1464,7 +1467,7 @@ function chk(sel,val,label){ return `[${sel===val?'○':'&nbsp;&nbsp;'}] ${label
 function acceptPages(){
   const s=S.supplier;
   const unit = SUB.svcCount>0 ? Math.round(SUB.amount/SUB.svcCount) : SUB.amount;
-  return `<div class="a4">
+  return `<div class="a4 cv fill">
     <div class="gv-title">승 낙 사 항 ( 용 역 집 행 )</div>
     <div class="gv-body">
       <p>1) 계약사항에 의하여 <span class="fill">${fmtDate(SUB.startDate)||'　　　　'}</span> 착수하고 <span class="fill">${fmtDate(SUB.endDate)||'　　　　'}</span> 까지 완료하여야 한다.</p>
@@ -1483,7 +1486,7 @@ function acceptPages(){
       </div>
     </div>
   </div>
-  <div class="a4">
+  <div class="a4 cv">
     <div class="gv-title">용 역 내 역 서</div>
     <table class="pl" style="font-size:11.5px">
       <tr><th style="width:8%">순번</th><th style="width:26%">용역명</th><th style="width:24%">거래처명</th><th>단위 또는 세부사항</th><th style="width:15%">금액</th></tr>
@@ -1541,9 +1544,7 @@ function pledgePages(){
       <p>계약상대자 : ${esc(s.name)}　　대표　${esc(s.ceo)}　${stampOn('(인)')}</p>
       <p style="font-weight:700; font-size:14px; margin-top:10px">${org}장 귀하</p>
     </div>
-  </div>
-  <div class="a4">
-    <div class="gv-title" style="letter-spacing:.1em; font-size:17px">붙임 — 수의계약 배제사유</div>
+    <div class="gv-title" style="letter-spacing:.1em; font-size:15px; margin-top:26px; padding:8px 0">붙임 — 수의계약 배제사유</div>
     <div class="exc">
       <p>① 견적서 제출 마감일 현재 부도·파산·해산·영업정지 등이 확정된 경우</p>
       <p>② 입찰참가자격 제한기간 중에 있는 자(법 제31조 제5항에 해당되는 경우 예외)</p>
