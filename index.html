@@ -498,7 +498,6 @@ table.pl td.k{background:#f4f6f8; text-align:center; font-weight:700; white-spac
         </div>
         <div class="spacer"></div>
         <button class="btn seal" onclick="exportSubmitDocx()">Word(.docx)</button>
-        <button class="btn" onclick="exportSubmitExcel()">엑셀(.xlsx)</button>
         <button class="btn" onclick="printSubmit()">인쇄 / PDF 저장</button>
       </div>
       <div class="doc-scroll" id="subPreview"></div>
@@ -1375,20 +1374,27 @@ let SUB = LS.get('enk_submit', { org:'', contractName:'', amount:0, bondRate:10,
 const PLEDGE_DEF=[
  {t:'계약일반조건', check:'none', body:`우리 업체는 「지방자치단체 입찰 및 계약 집행기준」 제9장 계약 일반조건을 준수합니다.`},
  {t:'조세포탈 등을 한 자에 해당하지 않음', check:'none', body:`우리 업체는 「지방자치단체를 당사자로 하는 계약에 관한 법률」 제31조의5에 따른 조세포탈 등을 한 자가 아님을 서약하며, 조세포탈 등을 한 자에 해당하여 유죄판결이 확정된 날부터 2년이 지나지 않은 사실이 발견된 때에는 계약을 해제ㆍ해지를 감수하겠으며, 「지방계약법 시행령」 제93조에 따라 부정당업자의 입찰참가자격 제한 처분을 받겠습니다.`},
- {t:'안전·보건관리 준수 서약서', check:'none', body:`우리 업체는 {발주기관}의 계약을 수행함에 있어 산업재해예방을 위하여 「산업안전보건법, 중대재해처벌법」 등 안전·보건 관련 법규에서 정한 필수사항을 철저히 준수할 것을 서약합니다. 본 계약을 수행함에 있어 위에 언급한 내용대로 계약을 성실히 이행할 것이며, 이행하지 않을 경우 계약해지, 입찰참가자격 제한조치 등 불이익 처분을 받더라도 하등의 이의를 제기하지 아니할 것을 확약하고, 사업 수행 전 안전·보건관리계획서를 해당 시 제출하고 사업이행 시 {발주기관}의 안전보건관리 활동과 점검에 적극 협조하겠습니다.`},
+ {t:'안전·보건관리 준수 서약서', check:'none', body:`우리 업체는 {발주기관}의 계약을 수행함에 있어 산업재해예방을 위하여 「산업안전보건법, 중대재해처벌법」 등 안전·보건 관련 법규에서 정한 필수사항을 철저히 준수할 것을 다음과 같이 서약합니다.
+본 계약을 수행함에 있어 위에 언급한 내용대로 계약을 성실히 이행할 것이며, 이행하지 않을 경우 계약해지, 입찰참가자격 제한조치 등 불이익 처분을 받더라도 하등의 이의를 제기하지 아니할 것을 확약하고, 사업 수행 전 안전·보건관리계획서를 해당 시 제출하고 사업이행 시 {발주기관}의 안전보건관리 활동과 점검에 적극 협조하겠습니다.`},
  {t:'개인정보 수집·이용 동의', check:'none', extra:'privacy', body:`『개인정보 보호법 제15조, 제22조』에 따라 아래와 같이 개인정보를 수집 및 이용하고자 합니다.`},
- {t:'[공사] 전기·수도 사용료 납부 확약서', check:'na', body:`우리 업체는 공사용 임시 전기·수도를 설치하여 사용할 수 없으므로 {발주기관}의 전기 및 수도를 사용 후 대한건설협회 '완성공사원가분석' 경비율에 의한 계산식으로 전기료 및 수도료를 {발주기관}에 세입조치하고 이의를 제기하지 않겠습니다.`},
+ {t:'[공사] 전기·수도 사용료 납부 확약서', check:'na', body:`우리 업체는 공사용 임시 전기·수도를 설치하여 사용할 수 없으므로 {발주기관}의 전기 및 수도를 사용 후 대한건설협회 '완성공사원가분석' 경비율에 의한 계산식으로 전기료 및 수도료를 {발주기관}에 세입조치하고 이의를 제기하지 않겠습니다. [※수도광열비 산정서는 별도 첨부, 교육청(교육지원청) 집행대행 공사의 경우 우리 학교와 합의서 필요]`},
  {t:'계약보증금 지급 각서', check:'yes', body:`「지방자치단체를 당사자로 하는 계약에 관한 법률 시행령」 제54조에 따라 계약보증금 세입조치 사유가 발생하면 즉시 해당하는 금액을 현금으로 납부하겠습니다.`},
  {t:'하자보수보증금 지급 확약서', check:'yes', body:`「지방자치단체를 당사자로 하는 계약에 관한 법률 시행령」 제71조에 따라 하자보수보증금을 {발주기관}에 귀속시켜야 할 사유가 발생하면 즉시 해당하는 금액을 현금으로 납부하겠습니다. (※ 보증금액과 보증기간을 정한 각서 또는 보증서는 별도 제출)`},
  {t:'수의계약 각서', check:'yes', body:`「지방자치단체 입찰 및 계약 집행기준」 제5장 수의계약 운영요령 별지 제1호
 상기 본인(법인)은 {발주기관}와(과) 수의계약을 체결함에 있어서 붙임 배제사유 중 어느 사유에도 해당되지 않으며 차후에 이러한 사실이 발견된 경우 계약의 해제·해지 및 부정당업자 제재 처분을 받아도 하등의 이유를 제기하지 않겠습니다.
 붙임 : 수의계약 배제사유 1부`},
- {t:'수의계약 체결 제한 여부 확인서', check:'none', body:`「공직자의 이해충돌 방지법」 제12조에 따른 수의계약 체결 제한 확인 사항
-① 발주기관의 소속 고위공직자, 배우자, 고위공직자의 직계존속·비속 또는 생계를 같이하는 배우자의 직계존속·비속에 해당하는가?　[　] 예　[○] 아니오
-② 위 어느 하나에 해당하는 사람이 대표자인 법인 또는 단체에 해당하는가?　[　] 예　[○] 아니오
-③ 위 어느 하나에 해당하는 사람과 특수한 관계의 사업자(발행주식 총수의 30% 이상, 출자지분 총수의 30% 이상, 자본금 총액의 50% 이상 소유)에 해당하는가?　[　] 예　[○] 아니오
-위와 같이 확인하며, 사실과 다른 경우 어떠한 처벌이나 불이익도 감수할 것을 서약합니다.`},
- {t:'청렴서약서', check:'yes', body:`『지방자치단체를 당사자로 하는 계약에 관한 법률』 제6조의2에 따라 발주기관의 모든 공사, 물품 및 용역 등의 입찰(견적제출 포함), 낙찰, 계약의 체결 및 이행, 감독·검사 등의 과정(준공·납품 이후 포함)에 참여한 당사 임직원과 대리인은 아래 각 호의 청렴서약 조건을 준수할 것이며, 위반 시 입찰·낙찰 취소, 계약 해제·해지 및 부정당업자 입찰 참가자격 제한 등의 불이익을 감수하고 민·형사상 이의를 제기하지 않을 것임을 약정합니다.
+ {t:'수의계약 체결 제한 여부 확인서', check:'none', body:`「경상북도교육청 공직자의 이해충돌 방지제도 운영 규정」 별지 제9호
+수의계약 체결 제한 확인 사항
+① 발주기관의 소속 고위공직자, 배우자, 고위공직자의 직계존속·비속 또는 생계를 같이하는 배우자의 직계존속·비속에 해당하는가?  [  ] 예  [○] 아니오  [  ] 해당없음
+② 계약 업무를 법령상·사실상 담당하는 공직자, 배우자, 공직자의 직계존속·비속 또는 생계를 같이하는 배우자의 직계존속·비속에 해당하는가?  [  ] 예  [○] 아니오  [  ] 해당없음
+③ 발주기관(산하기관)의 감독기관 소속 고위공직자, 배우자, 고위공직자의 직계존속·비속 또는 생계를 같이하는 배우자의 직계존속·비속에 해당하는가?  [  ] 예  [○] 아니오  [  ] 해당없음
+④ 발주기관(자회사)의 모회사 소속 고위공직자, 배우자, 고위공직자의 직계존속·비속 또는 생계를 같이하는 배우자의 직계존속·비속에 해당하는가?  [  ] 예  [○] 아니오  [  ] 해당없음
+⑤ 상임위원회 위원의 국회의원, 배우자, 국회의원의 직계존속·비속 또는 생계를 같이하는 배우자의 직계존속·비속에 해당하는가?  [  ] 예  [○] 아니오  [  ] 해당없음
+⑥ 공공기관을 감사 또는 조사하는 지방의회의 의원, 배우자, 의원의 직계존속·비속 또는 생계를 같이하는 배우자의 직계존속·비속에 해당하는가?  [  ] 예  [○] 아니오  [  ] 해당없음
+⑦ ①부터 ⑥까지 어느 하나에 해당하는 사람이 대표자인 법인 또는 단체에 해당하는가?  [  ] 예  [○] 아니오  [  ] 해당없음
+⑧ ①부터 ⑥까지 어느 하나에 해당하는 사람과 특수한 관계의 사업자(공직자, 배우자, 공직자의 직계존속·비속, 생계를 같이하는 배우자의 직계존속·비속이 단독으로 또는 합산하여 발행주식 총수의 100분의 30 이상, 출자지분 총수의 100분의 30 이상, 자본금 총액의 100분의 50 이상을 소유하고 있는 법인 또는 단체)에 해당하는가?  [  ] 예  [○] 아니오  [  ] 해당없음
+「공직자의 이해충돌 방지법」 제12조에 따른 수의계약 체결 제한에 대하여 위와 같이 확인합니다. 만약 위 사항이 사실과 다른 경우에는 어떠한 처벌이나 불이익도 감수할 것을 서약합니다.  (대표자 서명 또는 인)`},
+ {t:'청렴서약서', check:'yes', body:`『지방자치단체를 당사자로 하는 계약에 관한 법률』 제6조의2에 따라 경상북도교육청에서 발주하는 모든 공사, 물품 및 용역 등의 입찰(견적제출 포함), 낙찰, 계약의 체결 및 이행, 「지방자치단체를 당사자로 하는 계약에 관한 법률」 제16조에 따른 감독, 제17조에 따른 검사 등의 과정(준공·납품 이후를 포함한다)에 참여한 당사 임직원과 대리인은 아래 각 호의 청렴서약 조건을 준수할 것이며, 이를 위반할 때에는 입찰·낙찰을 취소하거나 계약을 해제·해지 및 부정당업자의 입찰 참가자격 제한 등의 불이익을 감수하고, 이에 민·형사상 이의를 제기하지 않을 것임을 약정합니다.
 1. 직접 또는 간접적인 사례, 증여, 금품․향응 등(친인척 등에 대한 부정한 취업 제공 포함)을 제공 또는 약속하거나 수수하지 않겠습니다.
 2. 입찰가격의 사전협의 또는 특정인의 낙찰을 위한 담합 등 입찰의 자유경쟁을 방해하는 행위나 불공정한 행위를 하지 않겠습니다.
 3. 공정한 직무수행을 방해하는 알선․청탁을 통하여 입찰 또는 계약과 관련된 특정 정보의 제공을 요구하거나 받는 행위를 하지 않겠습니다.`}
@@ -1399,6 +1405,25 @@ function normalizePledge(){
   if(SUB.elec){ SUB.pledge[4].check=SUB.elec; delete SUB.elec; }   // 구버전 데이터 이전
 }
 normalizePledge();
+const EXC_LINES=[
+'① 견적서 제출 마감일 현재 부도·파산·해산·영업정지 등이 확정된 경우',
+'② 입찰참가자격 제한기간 중에 있는 자(법 제31조 제5항에 해당되는 경우 예외)',
+'③ 견적서 제출 마감일을 기준으로 법 제31조 또는 다른 법령에 따라 부실이행, 담합행위, 입찰․계약 서류의 허위․위조 제출, 입찰·낙찰·계약이행 관련 뇌물 제공으로 부정당업자 제재 처분을 받고 그 종료일로부터 3개월이 지나지 아니한 자(법 제31조 제5항에 해당되는 경우 예외)',
+'④ 공사 또는 기술용역의 경우 기술자 보유현황이 관련법령에 따른 업종등록 기준에 미달하는 자',
+'　※ 기술자보유현황의 심사는 「낙찰자결정기준」 제1장 입찰참가자격 사전심사기준 제5절 "4"의 그밖에 해당공사 수행능력상 결격여부, 제2장의2 기술·학술연구 용역 적격심사 세부기준 <별표>의 기술인력 평가방법을 준용한다. 이때 \'입찰공고일\'은 \'안내공고일\'로 \'적격심사서류 제출마감일\'은 \'견적서 제출마감일\'로 본다.',
+'⑤ 견적서 제출 마감일 기준 최근 3개월 이내에 해당 지방자치단체의 입찰․계약 및 그 이행과 관련하여 10일 이상 지연배상금 부과, 정당한 이행명령 거부, 불법하도급, 5회 이상 하자보수 또는 물의를 일으키는 등 신용이 떨어져 계약 체결이 곤란하다고 판단되는 자',
+'⑥ 견적서 제출 마감일 기준 최근 3개월 이내에 해당 지방자치단체와의 계약 및 그 이행과 관련하여 정당한 이유 없이 계약에 응하지 아니하거나 포기서를 제출한 사실이 있는 자',
+'　※ 정당한 이유 없이 계약을 체결하지 아니하는 경우는 법 제31조에 따른 입찰참가자격 제한에는 해당되지 아니하나 수의계약 배제사유에 해당됨.',
+'⑦ 수의계약 체결일 현재 법 제33조에 해당하는 자',
+'　1. 지방자치단체의 장 또는 지방의회의원의 배우자인 사업자(법인은 대표자)',
+'　2. 지방자치단체의 장 또는 지방의회의원(배우자 포함)의 직계 존·비속인 사업자',
+'　3. 지방자치단체의 장 또는 지방의회의원이 자본금 총액의 50% 이상을 소유한 자',
+'　4. 지방자치단체의 장 또는 지방의회의원 가족(배우자, 직계존·비속)의 합산금액이 자본금 총액의 50% 이상을 소유한 사업자',
+'　5. 지방자치단체의 장 또는 지방의회의원 소유업체의 계열회사 등',
+'⑧ 발주기관이 제한한 자격요건 등을 충족하지 아니한 자',
+'⑨ 그밖에 계약담당자가 계약이행능력이 없다고 판단되는 명백한 증거가 있는 자',
+'⑩ 「재난 및 안전관리 기본법」 제60조에 따라 특별재난지역으로 선포된 지역의 재난복구공사(용역)의 경우 결격여부 심사일 현재 계약금액 5천만원 이상 해당업종 관급공사 또는 계약금액 2천만원 이상 관급용역이 3건 이상인 자. 다만, 동시에 여러 건의 수의계약 체결 예정자로 선정된 경우에는 기존 계약을 포함하여 3건까지 수의계약을 체결할 수 있다. (단, 제3절의 "1"에 따른 2인 이상 견적서 제출 수의계약에 한한다)'
+];
 const pledgeOpen={};
 function pledgeText(i){
   const raw = SUB.pledge[i].text ?? PLEDGE_DEF[i].body;
@@ -1513,11 +1538,16 @@ function pledgePages(){
   const privacyExtra=`<table class="pl" style="margin:6px 0; border-width:1px">
         <tr><th>항목</th><th>수집ㆍ이용 목적</th><th>보유ㆍ이용기간</th></tr>
         <tr><td>계약업체명, 계약자명, 업체담당자, 휴대폰 번호, 이메일주소</td><td>계약관리를 위한 안내, 교육수요자 청렴정책 추진, 부패비리 문자 안내</td><td class="c">계약체결일 다음 연도부터 5년</td></tr>
-        <tr><td class="k">직책 / 성명</td><td colspan="2">대표 / ${esc(s.ceo)}　　(휴대폰 : ${esc(s.phone)}${s.email?' / 이메일 : '+esc(s.email):''})</td></tr>
-        <tr><td class="k">동의 여부</td><td colspan="2">■ 예　□ 아니오</td></tr>
       </table>
-      <span class="pl-note">위의 개인정보 수집ㆍ이용에 대한 동의를 거부할 권리가 있습니다. 다만 거부 시 계약관리 안내 등에 제한을 받을 수 있습니다.</span><br>
-      ${dotFmt(SUB.writeDate)}　동의자　${esc(s.ceo)}　　(서명)`;
+      <span class="pl-note">위의 개인정보 수집ㆍ이용에 대한 동의를 거부할 권리가 있습니다. 그러나 동의를 거부할 경우 계약관리를 위한 안내, 교육수요자 청렴정책 추진, 부패비리 문자 안내에 제한을 받을 수 있습니다.</span>
+      <table class="pl" style="margin:6px 0; border-width:1px">
+        <tr><th style="width:12%">직책</th><th style="width:14%">성명</th><th style="width:22%">휴대폰번호</th><th>이메일주소</th><th style="width:20%">동의 여부</th></tr>
+        <tr><td class="c">대표</td><td class="c">${esc(s.ceo)}</td><td class="c">${esc(s.phone)}</td><td class="c">${esc(s.email)}</td><td class="c">■ 예　□ 아니오</td></tr>
+        <tr><td class="c">&nbsp;</td><td></td><td></td><td></td><td class="c">□ 예　□ 아니오</td></tr>
+      </table>
+      ${dotFmt(SUB.writeDate)}　　동의자　${esc(s.ceo)}　　　(서명)*<br>
+      　　　　　　　동의자　　　　　　　(서명)*<br>
+      <span class="pl-note">* 2명 이상의 개인정보를 수집하는 경우에는 하단 서명란에 동의자를 추가하여 각각 서명 받아야 함</span>`;
   const signCell = S.images.stamp
     ? `<div class="cell-stamp"><span>(서명 또는 인)</span><img src="${S.images.stamp.dataUrl}" alt="직인"></div>`
     : `(서명 또는 인)`;
@@ -1542,26 +1572,14 @@ function pledgePages(){
     </table>
     <table class="pl">
       <tr><th style="width:5%">순</th><th style="width:15%">구분</th><th>이행 내용</th><th style="width:11%">대표자 확인</th></tr>
-      ${items.map((it,i)=>`<tr><td class="c">${i+1}</td><td class="c">${it[0]}</td><td>${it[1]}</td><td class="c" style="font-size:9px">${signCell}</td></tr>`).join('')}
+      ${items.map((it,i)=>`<tr><td class="c">${i+1}</td><td class="c">${it[0]}</td><td>${it[1]}</td><td class="c" style="font-size:9px">${signCell}</td></tr>`
+        + (i===7 ? `<tr><td colspan="4" style="background:#fcfcfc"><b style="display:block; text-align:center; margin:4px 0 8px; font-size:12px">붙임 : 수의계약 배제사유</b>${EXC_LINES.map(l=>`<p style="margin-bottom:4px; text-align:justify; font-size:10.5px">${esc(l)}</p>`).join('')}</td></tr>` : '')).join('')}
     </table>
     <div class="pl-foot">
       <p>상기 '계약이행 통합서약서'에 대한 내용에 동의하고 이상이 없음을 확인합니다.</p>
       <p>${wy}.　${+wm||''}.　${+wd||''}.</p>
       <p>계약상대자 : ${esc(s.name)}　　대표　${esc(s.ceo)}　${stampOn('(인)')}</p>
       <p style="font-weight:700; font-size:14px; margin-top:10px">${org}장 귀하</p>
-    </div>
-    <div class="gv-title" style="letter-spacing:.1em; font-size:15px; margin-top:26px; padding:8px 0">붙임 — 수의계약 배제사유</div>
-    <div class="exc">
-      <p>① 견적서 제출 마감일 현재 부도·파산·해산·영업정지 등이 확정된 경우</p>
-      <p>② 입찰참가자격 제한기간 중에 있는 자(법 제31조 제5항에 해당되는 경우 예외)</p>
-      <p>③ 견적서 제출 마감일을 기준으로 법 제31조 또는 다른 법령에 따라 부실이행, 담합행위, 입찰․계약 서류의 허위․위조 제출, 입찰·낙찰·계약이행 관련 뇌물 제공으로 부정당업자 제재 처분을 받고 그 종료일로부터 3개월이 지나지 아니한 자(법 제31조 제5항에 해당되는 경우 예외)</p>
-      <p>④ 공사 또는 기술용역의 경우 기술자 보유현황이 관련법령에 따른 업종등록 기준에 미달하는 자</p>
-      <p>⑤ 견적서 제출 마감일 기준 최근 3개월 이내에 해당 지방자치단체의 입찰․계약 및 그 이행과 관련하여 10일 이상 지연배상금 부과, 정당한 이행명령 거부, 불법하도급, 5회 이상 하자보수 또는 물의를 일으키는 등 신용이 떨어져 계약 체결이 곤란하다고 판단되는 자</p>
-      <p>⑥ 견적서 제출 마감일 기준 최근 3개월 이내에 해당 지방자치단체와의 계약 및 그 이행과 관련하여 정당한 이유 없이 계약에 응하지 아니하거나 포기서를 제출한 사실이 있는 자</p>
-      <p>⑦ 수의계약 체결일 현재 법 제33조에 해당하는 자 (지방자치단체의 장 또는 지방의회의원의 배우자·직계 존비속인 사업자, 해당 공직자 또는 그 가족이 자본금 총액의 50% 이상을 소유한 자, 그 소유업체의 계열회사 등)</p>
-      <p>⑧ 발주기관이 제한한 자격요건 등을 충족하지 아니한 자</p>
-      <p>⑨ 그밖에 계약담당자가 계약이행능력이 없다고 판단되는 명백한 증거가 있는 자</p>
-      <p>⑩ 「재난 및 안전관리 기본법」 제60조에 따라 특별재난지역으로 선포된 지역의 재난복구공사(용역)의 경우 결격여부 심사일 현재 계약금액 5천만원 이상 해당업종 관급공사 또는 계약금액 2천만원 이상 관급용역이 3건 이상인 자. 다만, 동시에 여러 건의 수의계약 체결 예정자로 선정된 경우에는 기존 계약을 포함하여 3건까지 수의계약을 체결할 수 있다. (단, 제3절의 "1"에 따른 2인 이상 견적서 제출 수의계약에 한한다)</p>
     </div>
   </div>`;
 }
@@ -2143,16 +2161,26 @@ function pledgeDocxChildren(h){
     if(d.extra==='privacy'){
       paras.push(new D.Table({width:{size:100,type:D.WidthType.PERCENTAGE},rows:[
         new D.TableRow({children:[TC(P('항목',{b:1,center:1,s:16,after:0}),{bg:'EEF1F4'}),TC(P('수집ㆍ이용 목적',{b:1,center:1,s:16,after:0}),{bg:'EEF1F4'}),TC(P('보유ㆍ이용기간',{b:1,center:1,s:16,after:0}),{bg:'EEF1F4',w:22})]}),
-        new D.TableRow({children:[TC(P('계약업체명, 계약자명, 업체담당자, 휴대폰 번호, 이메일주소',{s:16,after:0})),TC(P('계약관리를 위한 안내, 교육수요자 청렴정책 추진, 부패비리 문자 안내',{s:16,after:0})),TC(P('계약체결일 다음 연도부터 5년',{center:1,s:16,after:0}))]}),
-        new D.TableRow({children:[TC(P('직책 / 성명',{b:1,center:1,s:16,after:0}),{bg:'F4F6F8'}),TC(P(`대표 / ${s.ceo}   (휴대폰 : ${s.phone})`,{s:16,after:0}),{span:2})]}),
-        new D.TableRow({children:[TC(P('동의 여부',{b:1,center:1,s:16,after:0}),{bg:'F4F6F8'}),TC(P('■ 예   □ 아니오',{s:16,after:0}),{span:2})]})
+        new D.TableRow({children:[TC(P('계약업체명, 계약자명, 업체담당자, 휴대폰 번호, 이메일주소',{s:16,after:0})),TC(P('계약관리를 위한 안내, 교육수요자 청렴정책 추진, 부패비리 문자 안내',{s:16,after:0})),TC(P('계약체결일 다음 연도부터 5년',{center:1,s:16,after:0}))]})
       ]}));
-      paras.push(P(`위의 개인정보 수집ㆍ이용에 대한 동의를 거부할 권리가 있습니다.`,{s:15,after:40}));
-      paras.push(P(`${dotFmt(SUB.writeDate)}   동의자   ${s.ceo}   (서명)`,{s:17,after:0}));
+      paras.push(P('위의 개인정보 수집ㆍ이용에 대한 동의를 거부할 권리가 있습니다. 그러나 동의를 거부할 경우 계약관리를 위한 안내, 교육수요자 청렴정책 추진, 부패비리 문자 안내에 제한을 받을 수 있습니다.',{s:14,after:60}));
+      paras.push(new D.Table({width:{size:100,type:D.WidthType.PERCENTAGE},rows:[
+        new D.TableRow({children:[TC(P('직책',{b:1,center:1,s:15,after:0}),{bg:'EEF1F4',w:12}),TC(P('성명',{b:1,center:1,s:15,after:0}),{bg:'EEF1F4',w:14}),TC(P('휴대폰번호',{b:1,center:1,s:15,after:0}),{bg:'EEF1F4',w:22}),TC(P('이메일주소',{b:1,center:1,s:15,after:0}),{bg:'EEF1F4'}),TC(P('동의 여부',{b:1,center:1,s:15,after:0}),{bg:'EEF1F4',w:20})]}),
+        new D.TableRow({children:[TC(P('대표',{center:1,s:15,after:0})),TC(P(s.ceo||'',{center:1,s:15,after:0})),TC(P(s.phone||'',{center:1,s:15,after:0})),TC(P(s.email||'',{center:1,s:15,after:0})),TC(P('■ 예  □ 아니오',{center:1,s:15,after:0}))]}),
+        new D.TableRow({children:[TC(P(' ',{s:15,after:0})),TC(P(' ',{s:15,after:0})),TC(P(' ',{s:15,after:0})),TC(P(' ',{s:15,after:0})),TC(P('□ 예  □ 아니오',{center:1,s:15,after:0}))]})
+      ]}));
+      paras.push(P(`${dotFmt(SUB.writeDate)}    동의자  ${s.ceo}      (서명)*`,{s:16,after:30}));
+      paras.push(P('             동의자             (서명)*',{s:16,after:30}));
+      paras.push(P('* 2명 이상의 개인정보를 수집하는 경우에는 하단 서명란에 동의자를 추가하여 각각 서명 받아야 함',{s:13,after:0}));
     }
     const line=yn(p.check);
     if(line) paras.push(P(line,{s:17,after:0}));
     rows.push(new D.TableRow({children:[TC(P(String(i+1),{center:1,s:18,after:0}),{w:5}),TC(P(d.t.replace('[공사] ',''),{center:1,s:17,after:0}),{w:14}),TC(paras),signCell()]}));
+    if(i===7){   // 원본과 동일: 8번(수의계약 각서) 바로 다음에 붙임 배제사유
+      const excParas=[P('붙임 : 수의계약 배제사유',{b:1,center:1,s:20,after:80})]
+        .concat(EXC_LINES.map(l=>P(l,{s:16,after:50})));
+      rows.push(new D.TableRow({children:[TC(excParas,{span:4})]}));
+    }
   });
   const [wy,wm,wd]=(SUB.writeDate||'--').split('-');
   const kids=[
@@ -2163,20 +2191,8 @@ function pledgeDocxChildren(h){
     P("상기 '계약이행 통합서약서'에 대한 내용에 동의하고 이상이 없음을 확인합니다.",{center:1,s:22,after:160}),
     P(`${wy}.  ${+wm||''}.  ${+wd||''}.`,{center:1,s:22,after:160}),
     new D.Paragraph({alignment:D.AlignmentType.CENTER,spacing:{after:160},children:[inRun(`계약상대자 : ${s.name}   대표  ${s.ceo}  (인) `,{s:22}), ...stampRun()]}),
-    P(`${org}장 귀하`,{center:1,b:1,s:28,after:280}),
-    titleBox('붙임 — 수의계약 배제사유',30), P('',{after:100})
+    P(`${org}장 귀하`,{center:1,b:1,s:28,after:120})
   ];
-  ['① 견적서 제출 마감일 현재 부도·파산·해산·영업정지 등이 확정된 경우',
-   '② 입찰참가자격 제한기간 중에 있는 자(법 제31조 제5항에 해당되는 경우 예외)',
-   '③ 견적서 제출 마감일을 기준으로 법 제31조 또는 다른 법령에 따라 부실이행, 담합행위, 입찰․계약 서류의 허위․위조 제출, 입찰·낙찰·계약이행 관련 뇌물 제공으로 부정당업자 제재 처분을 받고 그 종료일로부터 3개월이 지나지 아니한 자(법 제31조 제5항에 해당되는 경우 예외)',
-   '④ 공사 또는 기술용역의 경우 기술자 보유현황이 관련법령에 따른 업종등록 기준에 미달하는 자',
-   '⑤ 견적서 제출 마감일 기준 최근 3개월 이내에 해당 지방자치단체의 입찰․계약 및 그 이행과 관련하여 10일 이상 지연배상금 부과, 정당한 이행명령 거부, 불법하도급, 5회 이상 하자보수 또는 물의를 일으키는 등 신용이 떨어져 계약 체결이 곤란하다고 판단되는 자',
-   '⑥ 견적서 제출 마감일 기준 최근 3개월 이내에 해당 지방자치단체와의 계약 및 그 이행과 관련하여 정당한 이유 없이 계약에 응하지 아니하거나 포기서를 제출한 사실이 있는 자',
-   '⑦ 수의계약 체결일 현재 법 제33조에 해당하는 자 (지방자치단체의 장 또는 지방의회의원의 배우자·직계 존비속인 사업자 등)',
-   '⑧ 발주기관이 제한한 자격요건 등을 충족하지 아니한 자',
-   '⑨ 그밖에 계약담당자가 계약이행능력이 없다고 판단되는 명백한 증거가 있는 자',
-   '⑩ 「재난 및 안전관리 기본법」 제60조에 따라 특별재난지역으로 선포된 지역의 재난복구공사(용역)의 경우 결격여부 심사일 현재 계약금액 5천만원 이상 해당업종 관급공사 또는 계약금액 2천만원 이상 관급용역이 3건 이상인 자'
-  ].forEach(t=>kids.push(P(t,{s:17,after:70})));
   return kids;
 }
 function buildSubmitDoc(){
@@ -2197,117 +2213,10 @@ async function exportSubmitDocx(){
     toast('Word 파일이 다운로드되었습니다');
   }catch(e){
     console.error(e);
-    if(confirm('Word 생성에 실패했습니다 ('+e.message+').\n대신 엑셀(.xlsx)로 다운로드할까요?')) exportSubmitExcel();
+    alert('Word 생성에 실패했습니다: '+e.message+'\n인터넷 연결을 확인한 뒤 다시 시도하거나, 인쇄/PDF 저장을 이용해주세요.');
   }
 }
 
-/* ── 엑셀 빌더 (행 높이 자동 추정) ── */
-function estRowHeight(text, colChars, fontPt){
-  const perLine=Math.max(10, Math.floor(colChars/2));   // 한글=2문자 폭
-  const lines=Math.max(1, Math.ceil(String(text||'').length/perLine));
-  return Math.max(18, lines*((fontPt||9)+4.5));
-}
-function buildAcceptSheets(wb){
-  const s=S.supplier;
-  const ws=wb.addWorksheet('승낙사항',{pageSetup:{paperSize:9,fitToWidth:1,fitToHeight:0,horizontalCentered:true,verticalCentered:true,margins:{left:.2,right:.2,top:.2,bottom:.2,header:.1,footer:.1}}});
-  ws.getColumn(1).width=100;
-  let r=1;
-  cell(ws,'A'+r,'승 낙 사 항 ( 용 역 집 행 )',{font:{size:20,bold:true},align:{horizontal:'center'},border:bBox}); ws.getRow(r).height=40; r+=2;
-  const clauses=[
-    `1) 계약사항에 의하여 ${fmtDate(SUB.startDate)} 착수하고 ${fmtDate(SUB.endDate)} 까지 완료하여야 한다.`,
-    '2) 계약의 변경으로 인하여 계약금액에 증감이 생긴 때에는 명세서상의 그 단가로 증감하고 그 단가에 의하기 어려운 때에는 계약변경 당시의 단가에 의한다.',
-    `3) 기한내에 용역을 완료하지 못할 때에는 그 지연일수 1일에 대하여 계약금액의 1000분의 ${SUB.delayRate} 에 해당하는 지연배상금을 납부하여야 하며, 납부하여야 할 금액은 계약대가에서 상계할 수 있다.`,
-    `4) 계약대상자는 그 용역 완료일로부터 ${SUB.warrantyYears}년간 그 용역의 하자에 대하여 담보책임을 진다.`,
-    '5) 기타 이 계약서에 명시되지 아니한 사항은 지방자치단체(국가)를 당사자로 하는 계약에 관한 법률 등의 규정을 준용한다.'];
-  clauses.forEach(t=>{ cell(ws,'A'+r,t,{font:{size:12},align:{wrapText:true,vertical:'middle'}}); ws.getRow(r).height=estRowHeight(t,100,12)+8; r++; });
-  r++;
-  cell(ws,'A'+r,fmtDate(SUB.writeDate),{font:{size:12,bold:true},align:{horizontal:'center'}}); r+=2;
-  [['계   약   명',SUB.contractName],['상호 또는 법인명칭',s.name],['주민(법인)등록번호',s.bizNo],['전  화  번  호',s.phone],['주            소',s.addr],['대   표   자',(s.ceo||'')+'  (인)']].forEach(([k,v])=>{
-    cell(ws,'A'+r,`${k}  :  ${v||'—'}`,{font:{size:12},align:{wrapText:false,shrinkToFit:true}}); ws.getRow(r).height=22; r++;
-  });
-  addStamp(wb, ws, {col:0.62, row:r-1.85}, 32);
-  // 용역내역서 시트
-  const ws2=wb.addWorksheet('용역내역서',{pageSetup:{paperSize:9,fitToWidth:1,fitToHeight:0,horizontalCentered:true,verticalCentered:true,margins:{left:.2,right:.2,top:.2,bottom:.2,header:.1,footer:.1}}});
-  [8,24,26,28,14].forEach((w,i)=>ws2.getColumn(i+1).width=w);
-  ws2.mergeCells('A1:E1'); cell(ws2,'A1','용 역 내 역 서',{font:{size:18,bold:true},align:{horizontal:'center'},border:bBox}); ws2.getRow(1).height=34;
-  ['순번','용역명','거래처명','단위 또는 세부사항','금액'].forEach((t,i)=>cell(ws2,String.fromCharCode(65+i)+'3',t,{font:{bold:true,size:10},align:{horizontal:'center'},border:bAll,fill:'FFEEF1F4'}));
-  const unit=SUB.svcCount>0?Math.round(SUB.amount/SUB.svcCount):SUB.amount;
-  cell(ws2,'A4',1,{align:{horizontal:'center'},border:bAll});
-  cell(ws2,'B4',SUB.svcName||'',{align:{horizontal:'center',wrapText:false,shrinkToFit:true},border:bAll});
-  cell(ws2,'C4',s.name||'',{align:{horizontal:'center',wrapText:false,shrinkToFit:true},border:bAll});
-  cell(ws2,'D4',`${SUB.svcCount} (회(횟수)) x ${fmt(unit)}`,{align:{horizontal:'center'},border:bAll});
-  cell(ws2,'E4',SUB.amount,{align:{horizontal:'right'},border:bAll,numFmt:'#,##0'});
-  ws2.mergeCells('A5:D5'); cell(ws2,'A5','합   계',{font:{bold:true},align:{horizontal:'center'},border:bAll});
-  cell(ws2,'E5',SUB.amount,{font:{bold:true},align:{horizontal:'right'},border:bAll,numFmt:'#,##0'});
-  outline(ws2,3,1,5,5);
-}
-function buildPledgeSheet(wb){
-  const s=S.supplier, org=SUB.org||'○○학교', bond=Math.round(SUB.amount*(SUB.bondRate||10)/100);
-  const ws=wb.addWorksheet('통합서약서',{pageSetup:{paperSize:9,fitToWidth:1,fitToHeight:0,horizontalCentered:true,margins:{left:.2,right:.2,top:.2,bottom:.2,header:.1,footer:.1}}});
-  [5,13,84,12].forEach((w,i)=>ws.getColumn(i+1).width=w);
-  ws.mergeCells('A1:D1'); cell(ws,'A1','계약이행 통합서약서',{font:{size:18,bold:true},align:{horizontal:'center'},border:bBox}); ws.getRow(1).height=34;
-  let r=3;
-  const info=[['계약명',SUB.contractName,'',''],['계약금액',`금${fmt(SUB.amount)}원`,'계약보증금',`금${fmt(bond)}원`],['업체명',s.name,'사업자번호',s.bizNo],['연락처',s.phone,'계약기간',`${dotFmt(SUB.startDate)} ~ ${dotFmt(SUB.endDate)}`],['소재지',s.addr,'대표자',s.ceo],['하자보증','「지방계약법 시행규칙」 제68조 및 제70조에 따름','','']];
-  info.forEach(row=>{
-    cell(ws,'A'+r,row[0],{font:{bold:true,size:9},align:{horizontal:'center'},border:bAll,fill:'FFF4F6F8'});
-    if(row[2]===''){ ws.mergeCells(`B${r}:D${r}`); cell(ws,'B'+r,row[1]||'',{font:{size:9},align:{wrapText:false,shrinkToFit:true},border:bAll}); }
-    else{
-      cell(ws,'B'+r,row[1]||'',{font:{size:9},align:{wrapText:false,shrinkToFit:true},border:bAll});
-      cell(ws,'C'+r,row[2],{font:{bold:true,size:9},align:{horizontal:'center'},border:bAll,fill:'FFF4F6F8'});
-      cell(ws,'D'+r,row[3]||'',{font:{size:9},align:{wrapText:false,shrinkToFit:true},border:bAll});
-    }
-    ws.getRow(r).height=20; r++;
-  });
-  outline(ws,3,1,r-1,4); r++;
-  const th=r;
-  ['순','구분','이행 내용','대표자 확인'].forEach((t,i)=>cell(ws,String.fromCharCode(65+i)+r,t,{font:{bold:true,size:9},align:{horizontal:'center'},border:bAll,fill:'FFEEF1F4'})); r++;
-  const yn=(v)=> v==='none'?'':`\n[${v==='yes'?'○':'  '}] 예   [${v==='no'?'○':'  '}] 아니오   [${v==='na'?'○':'  '}] 해당없음`;
-  PLEDGE_DEF.forEach((d,i)=>{
-    const p=SUB.pledge[i];
-    let txt=pledgeText(i);
-    if(d.extra==='privacy'){
-      txt+=`\n[항목] 계약업체명, 계약자명, 업체담당자, 휴대폰, 이메일  [목적] 계약관리 안내, 청렴정책 추진  [기간] 계약체결일 다음 연도부터 5년\n직책/성명 : 대표 / ${s.ceo}   동의 여부 : ■ 예  □ 아니오\n${dotFmt(SUB.writeDate)}   동의자   ${s.ceo}   (서명)`;
-    }
-    txt+=yn(p.check);
-    cell(ws,'A'+r,i+1,{font:{size:9},align:{horizontal:'center',vertical:'middle'},border:bAll});
-    cell(ws,'B'+r,d.t.replace('[공사] ',''),{font:{size:8.5},align:{horizontal:'center',vertical:'middle',wrapText:true},border:bAll});
-    cell(ws,'C'+r,txt,{font:{size:8.5},align:{wrapText:true,vertical:'middle'},border:bAll});
-    cell(ws,'D'+r,'(서명 또는 인)',{font:{size:7.5},align:{horizontal:'center',vertical:'middle'},border:bAll});
-    ws.getRow(r).height=estRowHeight(txt,84,8.5);
-    addStamp(wb, ws, {col:3.28, row:r-1+0.12}, 26);
-    r++;
-  });
-  outline(ws,th,1,r-1,4); r++;
-  ws.mergeCells(`A${r}:D${r}`); cell(ws,'A'+r,"상기 '계약이행 통합서약서'에 대한 내용에 동의하고 이상이 없음을 확인합니다.",{font:{size:10},align:{horizontal:'center'}}); r++;
-  const [wy,wm,wd]=(SUB.writeDate||'--').split('-');
-  ws.mergeCells(`A${r}:D${r}`); cell(ws,'A'+r,`${wy}.  ${+wm||''}.  ${+wd||''}.`,{font:{size:10},align:{horizontal:'center'}}); r++;
-  ws.mergeCells(`A${r}:D${r}`); cell(ws,'A'+r,`계약상대자 : ${s.name}   대표  ${s.ceo}  (인)`,{font:{size:10},align:{horizontal:'center'}});
-  addStamp(wb, ws, {col:2.7, row:r-1+0.05}, 28); r++;
-  ws.mergeCells(`A${r}:D${r}`); cell(ws,'A'+r,`${org}장 귀하`,{font:{size:12,bold:true},align:{horizontal:'center'}}); r+=2;
-  ws.mergeCells(`A${r}:D${r}`); cell(ws,'A'+r,'붙임 — 수의계약 배제사유',{font:{size:12,bold:true},align:{horizontal:'center'},border:bBox}); ws.getRow(r).height=24; r++;
-  ['① 견적서 제출 마감일 현재 부도·파산·해산·영업정지 등이 확정된 경우',
-   '② 입찰참가자격 제한기간 중에 있는 자(법 제31조 제5항에 해당되는 경우 예외)',
-   '③ 견적서 제출 마감일을 기준으로 법 제31조 또는 다른 법령에 따라 부실이행, 담합행위, 입찰․계약 서류의 허위․위조 제출, 입찰·낙찰·계약이행 관련 뇌물 제공으로 부정당업자 제재 처분을 받고 그 종료일로부터 3개월이 지나지 아니한 자',
-   '④ 공사 또는 기술용역의 경우 기술자 보유현황이 관련법령에 따른 업종등록 기준에 미달하는 자',
-   '⑤ 최근 3개월 이내에 해당 지방자치단체의 입찰․계약 및 그 이행과 관련하여 10일 이상 지연배상금 부과, 정당한 이행명령 거부, 불법하도급, 5회 이상 하자보수 등으로 신용이 떨어져 계약 체결이 곤란하다고 판단되는 자',
-   '⑥ 최근 3개월 이내에 해당 지방자치단체와의 계약 및 그 이행과 관련하여 정당한 이유 없이 계약에 응하지 아니하거나 포기서를 제출한 사실이 있는 자',
-   '⑦ 수의계약 체결일 현재 법 제33조에 해당하는 자 (지방자치단체의 장 또는 지방의회의원의 배우자·직계 존비속인 사업자 등)',
-   '⑧ 발주기관이 제한한 자격요건 등을 충족하지 아니한 자',
-   '⑨ 그밖에 계약담당자가 계약이행능력이 없다고 판단되는 명백한 증거가 있는 자',
-   '⑩ 「재난 및 안전관리 기본법」 제60조에 따른 특별재난지역 재난복구공사(용역)의 경우 계약금액 기준 3건 이상 수의계약 체결자'
-  ].forEach(t=>{ ws.mergeCells(`A${r}:D${r}`); cell(ws,'A'+r,t,{font:{size:8.5},align:{wrapText:true,vertical:'middle'}}); ws.getRow(r).height=estRowHeight(t,114,8.5); r++; });
-}
-async function exportSubmitExcel(){
-  readSubmitForm();
-  try{
-    const wb=new ExcelJS.Workbook();
-    if(SUB.view!=='pledge') buildAcceptSheets(wb);
-    if(SUB.view!=='accept') buildPledgeSheet(wb);
-    const buf=await wb.xlsx.writeBuffer();
-    dlBlob(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), subFileBase()+'.xlsx');
-    toast('엑셀 파일이 다운로드되었습니다');
-  }catch(e){ console.error(e); alert('엑셀 생성 오류: '+e.message); }
-}
 
 /* ═══════════ 탭 · 초기화 ═══════════ */
 function switchTab(name){
